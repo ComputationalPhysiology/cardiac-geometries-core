@@ -1,0 +1,20 @@
+name: CI
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/scientificcomputing/fenics-gmsh:2023-08-16
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install -e ".[test]"
+
+      - name: Test with pytest
+        run: |
+          python3 -m pytest

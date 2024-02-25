@@ -7,8 +7,10 @@ from . import utils
 
 
 def biv_ellipsoid(
-    mesh_name: str = "",
-    center_lv=(0.0, 0.0, 0.0),
+    mesh_name: str | Path = "",
+    center_lv_x: float = 0.0,
+    center_lv_y: float = 0.0,
+    center_lv_z: float = 0.0,
     radius_lv=1.0,
     radius_lv_endo=1.0,
     a_endo_lv: float = 2.5,
@@ -17,7 +19,9 @@ def biv_ellipsoid(
     a_epi_lv: float = 3.0,
     b_epi_lv: float = 1.5,
     c_epi_lv: float = 1.5,
-    center_rv=(0.0, 0.5, 0.0),
+    center_rv_x: float = 0.0,
+    center_rv_y: float = 0.5,
+    center_rv_z: float = 0.0,
     radius_rv=1.0,
     radius_rv_endo=1.0,
     a_endo_rv: float = 3.0,
@@ -32,6 +36,8 @@ def biv_ellipsoid(
     base_x: float = 0.0,
     char_length: float = 0.5,
 ) -> Path:
+    center_lv = (center_lv_x, center_lv_y, center_lv_z)
+    center_rv = (center_rv_x, center_rv_y, center_rv_z)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     gmsh.initialize()
     gmsh.model.add("biv")
@@ -55,9 +61,7 @@ def biv_ellipsoid(
         *center_lv, radius=radius_lv_endo, angle1=angle1, angle2=angle2, angle3=angle3
     )
     dim_tag_lv_endo = [(3, lv_endo_id)]
-    gmsh.model.occ.dilate(
-        dim_tag_lv_endo, *center_lv, a=a_endo_lv, b=b_endo_lv, c=c_endo_lv
-    )
+    gmsh.model.occ.dilate(dim_tag_lv_endo, *center_lv, a=a_endo_lv, b=b_endo_lv, c=c_endo_lv)
 
     # RV epicardium
     rv_id = gmsh.model.occ.addSphere(
@@ -74,9 +78,7 @@ def biv_ellipsoid(
     )
 
     dim_tag_rv_endo = [(3, rv_endo_id)]
-    gmsh.model.occ.dilate(
-        dim_tag_rv_endo, *center_lv, a=a_endo_rv, b=b_endo_rv, c=c_endo_rv
-    )
+    gmsh.model.occ.dilate(dim_tag_rv_endo, *center_lv, a=a_endo_rv, b=b_endo_rv, c=c_endo_rv)
     gmsh.model.occ.translate(dim_tag_rv_endo, *center_rv)
 
     # Subtract LV epicardium from RV endo
@@ -151,13 +153,15 @@ def biv_ellipsoid(
 
 
 def biv_ellipsoid_torso(
-    mesh_name: str = "",
+    mesh_name: str | Path = "",
     heart_as_surface: bool = False,
     torso_length: float = 20.0,
     torso_width: float = 20.0,
     torso_height: float = 20.0,
     rotation_angle: float = math.pi / 6,
-    center_lv=(0.0, 0.0, 0.0),
+    center_lv_x: float = 0.0,
+    center_lv_y: float = 0.0,
+    center_lv_z: float = 0.0,
     radius_lv=1.0,
     radius_lv_endo=1.0,
     a_endo_lv: float = 2.5,
@@ -166,7 +170,9 @@ def biv_ellipsoid_torso(
     a_epi_lv: float = 3.0,
     b_epi_lv: float = 1.5,
     c_epi_lv: float = 1.5,
-    center_rv=(0.0, 0.5, 0.0),
+    center_rv_x: float = 0.0,
+    center_rv_y: float = 0.5,
+    center_rv_z: float = 0.0,
     radius_rv=1.0,
     radius_rv_endo=1.0,
     a_endo_rv: float = 3.0,
@@ -181,6 +187,8 @@ def biv_ellipsoid_torso(
     base_x: float = 0.0,
     char_length: float = 0.5,
 ) -> Path:
+    center_lv = (center_lv_x, center_lv_y, center_lv_z)
+    center_rv = (center_rv_x, center_rv_y, center_rv_z)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     gmsh.initialize()
     gmsh.model.add("biv")
@@ -204,9 +212,7 @@ def biv_ellipsoid_torso(
         *center_lv, radius=radius_lv_endo, angle1=angle1, angle2=angle2, angle3=angle3
     )
     dim_tag_lv_endo = [(3, lv_endo_id)]
-    gmsh.model.occ.dilate(
-        dim_tag_lv_endo, *center_lv, a=a_endo_lv, b=b_endo_lv, c=c_endo_lv
-    )
+    gmsh.model.occ.dilate(dim_tag_lv_endo, *center_lv, a=a_endo_lv, b=b_endo_lv, c=c_endo_lv)
 
     # RV epicardium
     rv_id = gmsh.model.occ.addSphere(
@@ -223,9 +229,7 @@ def biv_ellipsoid_torso(
     )
 
     dim_tag_rv_endo = [(3, rv_endo_id)]
-    gmsh.model.occ.dilate(
-        dim_tag_rv_endo, *center_lv, a=a_endo_rv, b=b_endo_rv, c=c_endo_rv
-    )
+    gmsh.model.occ.dilate(dim_tag_rv_endo, *center_lv, a=a_endo_rv, b=b_endo_rv, c=c_endo_rv)
     gmsh.model.occ.translate(dim_tag_rv_endo, *center_rv)
 
     # Subtract LV epicardium from RV endo

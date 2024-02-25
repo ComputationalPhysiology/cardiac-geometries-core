@@ -3,7 +3,7 @@ requires = ["setuptools>=61.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cardiac-geometriesx"
+name = "cardiac-geometries-core"
 version = "0.0.1"
 description = "Gmsh files for cardiac geometries"
 authors = [{name = "Henrik Finsberg", email = "henriknf@simula.no"}]
@@ -22,6 +22,7 @@ requires-python = ">=3.8"
 dependencies = [
     "gmsh",
     "numpy",
+    "rich-click"
 ]
 
 [project.readme]
@@ -38,6 +39,7 @@ dev = [
     "wheel",
 ]
 docs = [
+    "jupyter-book"
 ]
 test = [
     "pre-commit",
@@ -46,7 +48,7 @@ test = [
 ]
 
 [project.scripts]
-geo = "cardiac_geometries.cli:app"
+geo = "cardiac_geometries_core.cli:app"
 
 [tool.setuptools]
 include-package-data = true

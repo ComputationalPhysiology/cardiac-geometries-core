@@ -2,7 +2,7 @@
 
 Gmsh files for caridac geometries
 
-Source code : https://github.com/ComputationalPhysiology/cardiac-geometries-core 
+Source code : https://github.com/ComputationalPhysiology/cardiac-geometries-core
 
 ## Install
 ```

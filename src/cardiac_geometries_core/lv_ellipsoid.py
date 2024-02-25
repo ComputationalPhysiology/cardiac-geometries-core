@@ -7,7 +7,7 @@ from . import utils
 
 
 def prolate_lv_ellipsoid_flat_base(
-    mesh_name: str = "",
+    mesh_name: str | Path = "",
     a: float = 25.0,
     nu_epi: float = 0.8,
     nu_endo: float = 0.5,
@@ -57,7 +57,7 @@ def prolate_lv_ellipsoid_flat_base(
 
 
 def prolate_lv_ellipsoid(
-    mesh_name: str = "",
+    mesh_name: str | Path = "",
     a: float = 2.0,
     nu_epi: float = 0.8,
     nu_endo: float = 0.5,
@@ -118,7 +118,7 @@ def create_benchmark_geometry_land15():
 
 
 def lv_ellipsoid_flat_base(
-    mesh_name: str = "",
+    mesh_name: str | Path = "",
     r_short_endo: float = 7.0,
     r_short_epi: float = 10.0,
     r_long_endo: float = 17.0,
@@ -172,7 +172,7 @@ def lv_ellipsoid_flat_base(
 
 
 def lv_ellipsoid(
-    mesh_name: str = "",
+    mesh_name: str | Path = "",
     r_short_endo=0.025,
     r_short_epi=0.035,
     r_long_endo=0.09,

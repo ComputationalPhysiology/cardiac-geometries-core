@@ -1,11 +1,11 @@
+from pathlib import Path
 import gmsh
 import numpy as np
 
 from . import utils
 
 
-def slab(mesh_name: str = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
-
+def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
@@ -68,7 +68,7 @@ def slab(mesh_name: str = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
 
 
 def slab_in_bath(
-    mesh_name: str = "",
+    mesh_name: str | Path = "",
     lx=1.0,
     ly=0.01,
     lz=0.5,
