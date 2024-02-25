@@ -38,6 +38,11 @@ dev = [
     "twine",
     "wheel",
 ]
+pypi = [
+    "twine",
+    "wheel",
+    "build",
+]
 docs = [
     "jupyter-book"
 ]

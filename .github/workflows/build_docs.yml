@@ -1,7 +1,10 @@
 # Simple workflow for deploying static content to GitHub Pages
 name: Deploy static content to Pages
 
-on: [push]
+on:
+  pull_request:
+  push:
+    branches: [main]
 
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
@@ -28,19 +31,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Cache
-        id: cache
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/instant
-            ~/.cache/dijitso
-            ~/.cache/pip
-            ~/_build
-          key: cache_v1
-          restore-keys: |
-            cache_v1
 
       - name: Install dependencies
         run: python3 -m pip install ".[docs]"
