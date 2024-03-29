@@ -10,8 +10,17 @@ from click.testing import CliRunner
         cli.slab,
         cli.slab_in_bath,
         cli.lv_ellipsoid,
+        cli.lv_ellipsoid_2D,
         cli.biv_ellipsoid,
         cli.biv_ellipsoid_torso,
+    ],
+    ids=[
+        "slab",
+        "slab_in_bath",
+        "lv_ellipsoid",
+        "lv_ellipsoid_2D",
+        "biv_ellipsoid",
+        "biv_ellipsoid_torso",
     ],
 )
 def test_script(script, tmp_path: Path):

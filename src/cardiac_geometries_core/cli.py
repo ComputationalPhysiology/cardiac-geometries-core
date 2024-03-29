@@ -125,6 +125,110 @@ def lv_ellipsoid(
     )
 
 
+@click.command(help="Create 2D axisymmetric LV ellipsoidal geometry")
+@click.argument(
+    "outname",
+    default="lv_ellipsoid.msh",
+    required=True,
+    type=click.Path(
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        readable=True,
+        resolve_path=True,
+    ),
+)
+@click.option(
+    "--r-short-endo",
+    default=7.0,
+    type=float,
+    help="Shortest radius on the endocardium layer",
+    show_default=True,
+)
+@click.option(
+    "--r-short-epi",
+    default=10.0,
+    type=float,
+    help="Shortest radius on the epicardium layer",
+    show_default=True,
+)
+@click.option(
+    "--r-long-endo",
+    default=17.0,
+    type=float,
+    help="Longest radius on the endocardium layer",
+    show_default=True,
+)
+@click.option(
+    "--r-long-epi",
+    default=20.0,
+    type=float,
+    help="Longest radius on the epicardium layer",
+    show_default=True,
+)
+@click.option(
+    "--psize-ref",
+    default=1.0,
+    type=float,
+    help="The reference point size (smaller values yield as finer mesh",
+    show_default=True,
+)
+@click.option(
+    "--mu-apex-endo",
+    default=-math.pi,
+    type=float,
+    help="Angle for the endocardial apex",
+    show_default=True,
+)
+@click.option(
+    "--mu-base-endo",
+    default=-math.acos(5 / 17),
+    type=float,
+    help="Angle for the endocardial base",
+    show_default=True,
+)
+@click.option(
+    "--mu-apex-epi",
+    default=-math.pi,
+    type=float,
+    help="Angle for the epicardial apex",
+    show_default=True,
+)
+@click.option(
+    "--mu-base-epi",
+    default=-math.acos(5 / 20),
+    type=float,
+    help="Angle for the epicardial base",
+    show_default=True,
+)
+def lv_ellipsoid_2D(
+    outname: Path,
+    r_short_endo: float = 7.0,
+    r_short_epi: float = 10.0,
+    r_long_endo: float = 17.0,
+    r_long_epi: float = 20.0,
+    psize_ref: float = 1,
+    mu_apex_endo: float = -math.pi,
+    mu_base_endo: float = -math.acos(5 / 17),
+    mu_apex_epi: float = -math.pi,
+    mu_base_epi: float = -math.acos(5 / 20),
+):
+    from .lv_ellipsoid import lv_ellipsoid_2D
+
+    lv_ellipsoid_2D(
+        mesh_name=outname,
+        r_short_endo=r_short_endo,
+        r_short_epi=r_short_epi,
+        r_long_endo=r_long_endo,
+        r_long_epi=r_long_epi,
+        mu_base_endo=mu_base_endo,
+        mu_base_epi=mu_base_epi,
+        mu_apex_endo=mu_apex_endo,
+        mu_apex_epi=mu_apex_epi,
+        psize_ref=psize_ref,
+    )
+
+
 @click.command(help="Create BiV ellipsoidal geometry")
 @click.argument(
     "outname",
@@ -701,6 +805,7 @@ def slab_in_bath(
 
 
 app.add_command(lv_ellipsoid)
+app.add_command(lv_ellipsoid_2D)
 app.add_command(biv_ellipsoid)
 app.add_command(biv_ellipsoid_torso)
 app.add_command(slab)

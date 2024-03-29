@@ -10,6 +10,13 @@ def test_lv_prolate_flat_base():
     mesh_path.unlink(missing_ok=False)
 
 
+def test_lv_2D():
+    mesh_path = Path("lv_2D.msh")
+    mesh_path.unlink(missing_ok=True)
+    cgc.lv_ellipsoid_2D(mesh_path)
+    mesh_path.unlink(missing_ok=False)
+
+
 def test_lv_prolate():
     mesh_path = Path("prolate_lv_ellipsoid.msh")
     mesh_path.unlink(missing_ok=True)
