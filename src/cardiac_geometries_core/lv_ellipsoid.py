@@ -335,3 +335,143 @@ def lv_ellipsoid(
 
     gmsh.finalize()
     return path
+
+
+def lv_ellipsoid_2D(
+    mesh_name: str | Path = "",
+    r_short_endo: float = 7.0,
+    r_short_epi: float = 10.0,
+    r_long_endo: float = 17.0,
+    r_long_epi: float = 20.0,
+    psize_ref=3.0,
+    mu_apex_endo=-math.pi,
+    mu_base_endo=-math.acos(5 / 17),
+    mu_apex_epi=-math.pi,
+    mu_base_epi=-math.acos(5 / 20),
+) -> Path:
+    """Create general LV ellipsoid
+
+    Parameters
+    ----------
+    mesh_name : str, optional
+        Name of the mesh, by default ""
+    r_short_endo : float, optional
+        Shortest radius on the endocardium layer, by default 0.025
+    r_short_epi : float, optional
+       Shortest radius on the epicardium layer, by default 0.035
+    r_long_endo : float, optional
+        Longest radius on the endocardium layer, by default 0.09
+    r_long_epi : float, optional
+        Longest radius on the epicardium layer, by default 0.097
+    psize_ref : float, optional
+        The reference point size (smaller values yield as finer mesh, by default 0.005
+    mu_apex_endo : float, optional
+        Angle for the endocardial apex, by default -math.pi
+    mu_base_endo : float, optional
+        Angle for the endocardial base, by default -math.acos(5 / 17)
+    mu_apex_epi : float, optional
+        Angle for the epicardial apex, by default -math.pi
+    mu_base_epi : float, optional
+        Angle for the epicardial apex, by default -math.acos(5 / 20)
+
+    Returns
+    -------
+    Path
+        Path to the generated gmsh file
+    """
+    print(psize_ref)
+    path = utils.handle_mesh_name(mesh_name=mesh_name)
+
+    gmsh.initialize()
+    gmsh.option.setNumber("Geometry.CopyMeshingMethod", 1)
+    gmsh.option.setNumber("Mesh.Optimize", 1)
+    gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
+    gmsh.option.setNumber("Mesh.ElementOrder", 1)
+
+    def ellipsoid_point(mu, theta, r_long, r_short, psize):
+        return gmsh.model.geo.addPoint(
+            r_long * math.cos(mu),
+            r_short * math.sin(mu) * math.cos(theta),
+            r_short * math.sin(mu) * math.sin(theta),
+            psize,
+        )
+
+    center = gmsh.model.geo.addPoint(0.0, 0.0, 0.0)
+
+    apex_endo = ellipsoid_point(
+        mu=mu_apex_endo,
+        theta=0.0,
+        r_short=r_short_endo,
+        r_long=r_long_endo,
+        psize=psize_ref / 2.0,
+    )
+
+    base_endo = ellipsoid_point(
+        mu=mu_base_endo,
+        theta=0.0,
+        r_short=r_short_endo,
+        r_long=r_long_endo,
+        psize=psize_ref,
+    )
+
+    apex_epi = ellipsoid_point(
+        mu=mu_apex_epi,
+        theta=0.0,
+        r_short=r_short_epi,
+        r_long=r_long_epi,
+        psize=psize_ref / 2.0,
+    )
+
+    base_epi = ellipsoid_point(
+        mu=mu_base_epi,
+        theta=0.0,
+        r_short=r_short_epi,
+        r_long=r_long_epi,
+        psize=psize_ref,
+    )
+
+    apex = gmsh.model.geo.addLine(apex_endo, apex_epi)
+    base = gmsh.model.geo.addLine(base_endo, base_epi)
+    endo = gmsh.model.geo.add_ellipse_arc(apex_endo, center, apex_endo, base_endo)
+    epi = gmsh.model.geo.add_ellipse_arc(apex_epi, center, apex_epi, base_epi)
+
+    ll1 = gmsh.model.geo.addCurveLoop([apex, epi, -base, -endo])
+
+    s1 = gmsh.model.geo.addPlaneSurface([ll1])
+
+    gmsh.model.geo.synchronize()
+
+    phys_apex_endo = gmsh.model.addPhysicalGroup(0, [apex_endo])
+    gmsh.model.setPhysicalName(0, phys_apex_endo, "ENDOPT")
+
+    phys_apex_epi = gmsh.model.addPhysicalGroup(0, [apex_epi])
+    gmsh.model.setPhysicalName(0, phys_apex_epi, "EPIPT")
+
+    phys_apex = gmsh.model.addPhysicalGroup(1, [apex])
+    gmsh.model.setPhysicalName(1, phys_apex, "APEX")
+
+    phys_myo = gmsh.model.addPhysicalGroup(2, [s1])
+    gmsh.model.setPhysicalName(2, phys_myo, "MYOCARDIUM")
+
+    phys_endo = gmsh.model.addPhysicalGroup(1, [endo])
+    gmsh.model.setPhysicalName(1, phys_endo, "ENDO")
+
+    phys_epi = gmsh.model.addPhysicalGroup(1, [epi])
+    gmsh.model.setPhysicalName(1, phys_epi, "EPI")
+
+    phys_base = gmsh.model.addPhysicalGroup(1, [base])
+    gmsh.model.setPhysicalName(1, phys_base, "BASE")
+
+    phys_endoring = gmsh.model.addPhysicalGroup(0, [base_endo])
+    gmsh.model.setPhysicalName(0, phys_endoring, "ENDORING")
+
+    phys_epiring = gmsh.model.addPhysicalGroup(0, [base_epi])
+    gmsh.model.setPhysicalName(0, phys_epiring, "EPIRING")
+
+    gmsh.model.geo.synchronize()
+    gmsh.model.mesh.generate(2)
+
+    gmsh.write(path.as_posix())
+
+    gmsh.finalize()
+    return path
