@@ -5,10 +5,11 @@ import numpy as np
 from . import utils
 
 
-def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
+def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0) -> utils.GmshOutput:
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
+    gmsh.logger.start()
     gmsh.model.add("Slab")
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
@@ -62,9 +63,9 @@ def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
     gmsh.model.mesh.generate(3)
 
     gmsh.write(path.as_posix())
-
+    logs = gmsh.logger.get()
     gmsh.finalize()
-    return path
+    return utils.GmshOutput(path=path, logs=logs)
 
 
 def slab_in_bath(
@@ -76,7 +77,7 @@ def slab_in_bath(
     by=0.0,
     bz=0.1,
     dx=0.001,
-):
+) -> utils.GmshOutput:
     """Create slab inside a bath
 
     Parameters
@@ -107,6 +108,7 @@ def slab_in_bath(
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
+    gmsh.logger.start()
     gmsh.model.add("SlabInBath")
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
@@ -207,6 +209,6 @@ def slab_in_bath(
     gmsh.model.mesh.generate(3)
 
     gmsh.write(path.as_posix())
-
+    logs = gmsh.logger.get()
     gmsh.finalize()
-    return path
+    return utils.GmshOutput(path=path, logs=logs)

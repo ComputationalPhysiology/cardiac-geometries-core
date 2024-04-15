@@ -14,7 +14,7 @@ def prolate_lv_ellipsoid_flat_base(
     quota_base: float = -5.0,
     psize: float = 3.0,
     ndiv: float = 1.0,
-) -> Path:
+) -> utils.GmshOutput:
     """Create an LV ellipsoid with flat base
     in prolate spheroidal coordinates
 
@@ -66,7 +66,7 @@ def prolate_lv_ellipsoid(
     mu_base_endo=-math.acos(5 / 17),
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
-) -> Path:
+) -> utils.GmshOutput:
     """Create an LV ellipsoid in prolate spheroidal coordinates
 
     Parameters
@@ -126,7 +126,7 @@ def lv_ellipsoid_flat_base(
     quota_base: float = -5.0,
     psize: float = 3.0,
     ndiv: float = 1.0,
-) -> Path:
+) -> utils.GmshOutput:
     """Create an LV ellipsoids with a flat base
 
     Parameters
@@ -182,7 +182,7 @@ def lv_ellipsoid(
     mu_base_endo=-math.acos(5 / 17),
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
-) -> Path:
+) -> utils.GmshOutput:
     """Create general LV ellipsoid
 
     Parameters
@@ -217,6 +217,8 @@ def lv_ellipsoid(
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
     gmsh.initialize()
+    gmsh.logger.start()
+    gmsh.option.setNumber("General.Terminal", 0)
     gmsh.option.setNumber("Geometry.CopyMeshingMethod", 1)
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
@@ -333,8 +335,9 @@ def lv_ellipsoid(
 
     gmsh.write(path.as_posix())
 
+    logs = gmsh.logger.get()
     gmsh.finalize()
-    return path
+    return utils.GmshOutput(path=path, logs=logs)
 
 
 def lv_ellipsoid_2D(
@@ -348,7 +351,7 @@ def lv_ellipsoid_2D(
     mu_base_endo=-math.acos(5 / 17),
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
-) -> Path:
+) -> utils.GmshOutput:
     """Create general LV ellipsoid
 
     Parameters
@@ -383,6 +386,8 @@ def lv_ellipsoid_2D(
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
     gmsh.initialize()
+    gmsh.logger.start()
+    gmsh.option.setNumber("General.Terminal", 0)
     gmsh.option.setNumber("Geometry.CopyMeshingMethod", 1)
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
@@ -472,6 +477,6 @@ def lv_ellipsoid_2D(
     gmsh.model.mesh.generate(2)
 
     gmsh.write(path.as_posix())
-
+    logs = gmsh.logger.get()
     gmsh.finalize()
-    return path
+    return utils.GmshOutput(path=path, logs=logs)

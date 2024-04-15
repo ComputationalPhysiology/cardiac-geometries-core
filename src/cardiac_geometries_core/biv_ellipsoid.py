@@ -35,11 +35,12 @@ def biv_ellipsoid(
     angle3=2 * math.pi,
     base_x: float = 0.0,
     char_length: float = 0.5,
-) -> Path:
+) -> utils.GmshOutput:
     center_lv = (center_lv_x, center_lv_y, center_lv_z)
     center_rv = (center_rv_x, center_rv_y, center_rv_z)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     gmsh.initialize()
+    gmsh.logger.start()
     gmsh.model.add("biv")
 
     # Create a box for cutting the base
@@ -147,9 +148,10 @@ def biv_ellipsoid(
     gmsh.model.mesh.optimize("Netgen")
 
     gmsh.write(path.as_posix())
+    logs = gmsh.logger.get()
     gmsh.finalize()
 
-    return path
+    return utils.GmshOutput(path=path, logs=logs)
 
 
 def biv_ellipsoid_torso(
@@ -186,11 +188,12 @@ def biv_ellipsoid_torso(
     angle3=2 * math.pi,
     base_x: float = 0.0,
     char_length: float = 0.5,
-) -> Path:
+) -> utils.GmshOutput:
     center_lv = (center_lv_x, center_lv_y, center_lv_z)
     center_rv = (center_rv_x, center_rv_y, center_rv_z)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     gmsh.initialize()
+    gmsh.logger.start()
     gmsh.model.add("biv")
 
     # Create a box for cutting the base
@@ -272,9 +275,10 @@ def biv_ellipsoid_torso(
     gmsh.model.mesh.optimize("Netgen")
 
     gmsh.write(path.as_posix())
+    logs = gmsh.logger.get()
     gmsh.finalize()
 
-    return path
+    return utils.GmshOutput(path=path, logs=logs)
 
 
 def mark_heart_as_surface(ov2, torso_tag):
