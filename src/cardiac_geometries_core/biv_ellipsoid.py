@@ -35,11 +35,14 @@ def biv_ellipsoid(
     angle3=2 * math.pi,
     base_x: float = 0.0,
     char_length: float = 0.5,
+    verbose: bool = False,
 ) -> Path:
     center_lv = (center_lv_x, center_lv_y, center_lv_z)
     center_rv = (center_rv_x, center_rv_y, center_rv_z)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     gmsh.initialize()
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
     gmsh.model.add("biv")
 
     # Create a box for cutting the base
@@ -186,11 +189,14 @@ def biv_ellipsoid_torso(
     angle3=2 * math.pi,
     base_x: float = 0.0,
     char_length: float = 0.5,
+    verbose: bool = False,
 ) -> Path:
     center_lv = (center_lv_x, center_lv_y, center_lv_z)
     center_rv = (center_rv_x, center_rv_y, center_rv_z)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     gmsh.initialize()
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
     gmsh.model.add("biv")
 
     # Create a box for cutting the base

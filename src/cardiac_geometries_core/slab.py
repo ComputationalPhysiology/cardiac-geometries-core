@@ -5,10 +5,41 @@ import numpy as np
 from . import utils
 
 
-def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
+def slab(
+    mesh_name: str | Path = "",
+    lx=20.0,
+    ly=7.0,
+    lz=3.0,
+    dx=1.0,
+    verbose: bool = False,
+) -> Path:
+    """Create a slab geometry
+
+    Parameters
+    ----------
+    mesh_name : str | Path, optional
+        Filename where to save the mesh, by default ""
+    lx : float, optional
+        Length in x direction, by default 20.0
+    ly : float, optional
+        Length in y direction, by default 7.0
+    lz : float, optional
+        Length in z direction, by default 3.0
+    dx : float, optional
+        Mesh resolution, by default 1.0
+    verbose : bool, optional
+        If True, also display output from gmsh, by default False
+
+    Returns
+    -------
+    Path
+        Path to the mesh file
+    """
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
     gmsh.model.add("Slab")
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
@@ -76,37 +107,36 @@ def slab_in_bath(
     by=0.0,
     bz=0.1,
     dx=0.001,
+    verbose: bool = False,
 ):
     """Create slab inside a bath
 
     Parameters
     ----------
-    mesh_name : str, optional
-        Name of o, by default ""
+    mesh_name : str | Path, optional
+        Filename where to save the mesh, by default ""
     lx : float, optional
-        _description_, by default 1.0
+        Length in x direction, by default 20.0
     ly : float, optional
-        _description_, by default 0.01
+        Length in y direction, by default 7.0
     lz : float, optional
-        _description_, by default 0.5
-    bx : float, optional
-        _description_, by default 0.0
-    by : float, optional
-        _description_, by default 0.0
-    bz : float, optional
-        _description_, by default 0.1
+        Length in z direction, by default 3.0
     dx : float, optional
-        _description_, by default 0.001
+        Mesh resolution, by default 1.0
+    verbose : bool, optional
+        If True, also display output from gmsh, by default False
 
     Returns
     -------
-    _type_
-        _description_
+    Path
+        Path to the mesh file
     """
 
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
     gmsh.model.add("SlabInBath")
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
