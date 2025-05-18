@@ -7,7 +7,7 @@ import rich_click as click
 
 meta = metadata("cardiac-geometries-core")
 __version__ = meta["Version"]
-__author__ = meta["Author"]
+__author__ = meta["Author-email"]
 __license__ = meta["License"]
 
 
@@ -473,7 +473,7 @@ def biv_ellipsoid(
     default=math.pi / 6,
     type=float,
     help=(
-        "Angle to rotate the torso in order to object realistic" " position of the heart in a torso"
+        "Angle to rotate the torso in order to object realistic position of the heart in a torso"
     ),
     show_default=True,
 )
