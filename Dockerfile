@@ -1,5 +1,6 @@
 from ubuntu:latest
 
+
 # Dependency versions
 ARG GMSH_VERSION=4_12_2
 
@@ -9,12 +10,18 @@ WORKDIR /tmp
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
+    python3-venv \
     git \
     cmake \
     libeigen3-dev \
     ninja-build && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get clean
+
+ENV VENV=/opt/venv
+RUN python3 -m venv $VENV \
+    && $VENV/bin/pip install -U pip setuptools
+ENV PATH="${VENV}/bin:$PATH"
 
 # Install gmsh
 RUN git clone -b gmsh_${GMSH_VERSION} --single-branch --depth 1 https://gitlab.onelab.info/gmsh/gmsh.git && \
