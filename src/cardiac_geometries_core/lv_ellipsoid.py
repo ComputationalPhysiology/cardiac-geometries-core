@@ -182,7 +182,7 @@ def lv_ellipsoid(
     mu_base_endo=-math.acos(5 / 17),
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
-    verbose=False,
+    verbose: bool = False,
 ) -> Path:
     """Create general LV ellipsoid
 
@@ -209,7 +209,7 @@ def lv_ellipsoid(
     mu_base_epi : float, optional
         Angle for the epicardial apex, by default -math.acos(5 / 20)
     verbose : bool, optional
-        If True, also display output from gmsh, by default False
+        If True, GMSH will print messages to the console, by default True
 
     Returns
     -------
@@ -353,6 +353,7 @@ def lv_ellipsoid_2D(
     mu_base_endo=-math.acos(5 / 17),
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
+    verbose: bool = False,
 ) -> Path:
     """Create general LV ellipsoid
 
@@ -378,6 +379,8 @@ def lv_ellipsoid_2D(
         Angle for the epicardial apex, by default -math.pi
     mu_base_epi : float, optional
         Angle for the epicardial apex, by default -math.acos(5 / 20)
+    verbose : bool, optional
+        If True, GMSH will print messages to the console, by default True
 
     Returns
     -------

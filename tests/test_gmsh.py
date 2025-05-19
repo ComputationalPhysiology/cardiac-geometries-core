@@ -61,3 +61,10 @@ def test_biv_ellipsoid_torso():
     mesh_path.unlink(missing_ok=True)
     cgc.biv_ellipsoid_torso(mesh_name=mesh_path)
     mesh_path.unlink(missing_ok=False)
+
+
+def test_cylinder():
+    mesh_path = Path("cylinder.msh")
+    mesh_path.unlink(missing_ok=True)
+    cgc.cylinder(mesh_name=mesh_path)
+    mesh_path.unlink(missing_ok=False)

@@ -8,6 +8,7 @@ from .lv_ellipsoid import prolate_lv_ellipsoid_flat_base
 from .lv_ellipsoid import lv_ellipsoid_2D
 from .slab import slab
 from .slab import slab_in_bath
+from .cylinder import cylinder
 
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "biv_ellipsoid",
     "biv_ellipsoid_torso",
     "lv_ellipsoid_2D",
+    "cylinder",
 ]
