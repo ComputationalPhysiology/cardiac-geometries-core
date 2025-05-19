@@ -10,7 +10,7 @@ def cylinder(
     outer_radius: float = 20.0,
     height: float = 40.0,
     char_length: float = 10.0,
-    verbose=True,
+    verbose: bool = True,
 ):
     """Create a thick cylindrical shell (hollow cylinder) mesh using GMSH
 

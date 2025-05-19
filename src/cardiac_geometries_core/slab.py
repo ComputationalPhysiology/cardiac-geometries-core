@@ -5,10 +5,43 @@ import numpy as np
 from . import utils
 
 
-def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
+def slab(
+    mesh_name: str | Path = "",
+    lx: float = 20.0,
+    ly: float = 7.0,
+    lz: float = 3.0,
+    dx: float = 1.0,
+    verbose: bool = False,
+):
+    """Create a slab mesh using GMSH
+
+    Parameters
+    ----------
+    mesh_name : str, optional
+        Name of the mesh, by default ""
+    lx : float, optional
+        Length of the slab in x direction, by default 20.0
+    ly : float, optional
+        Length of the slab in y direction, by default 7.0
+    lz : float, optional
+        Length of the slab in z direction, by default 3.0
+    dx : float, optional
+        Characteristic length of the mesh, by default 1.0
+    verbose : bool, optional
+        If True, GMSH will print messages to the console, by default False
+
+    Returns
+    -------
+    Path
+        Path to the mesh file
+    """
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
+
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
+
     gmsh.model.add("Slab")
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
@@ -69,44 +102,50 @@ def slab(mesh_name: str | Path = "", lx=20.0, ly=7.0, lz=3.0, dx=1.0):
 
 def slab_in_bath(
     mesh_name: str | Path = "",
-    lx=1.0,
-    ly=0.01,
-    lz=0.5,
-    bx=0.0,
-    by=0.0,
-    bz=0.1,
-    dx=0.001,
+    lx: float = 1.0,
+    ly: float = 0.01,
+    lz: float = 0.5,
+    bx: float = 0.0,
+    by: float = 0.0,
+    bz: float = 0.1,
+    dx: float = 0.001,
+    verbose: bool = False,
 ):
     """Create slab inside a bath
 
     Parameters
     ----------
     mesh_name : str, optional
-        Name of o, by default ""
+        Name of output mesh file, by default ""
     lx : float, optional
-        _description_, by default 1.0
+        Length of the slab in x direction, by default 1.0
     ly : float, optional
-        _description_, by default 0.01
+        Length of the slab in y direction, by default 0.01
     lz : float, optional
-        _description_, by default 0.5
+        Length of the slab in z direction, by default 0.5
     bx : float, optional
-        _description_, by default 0.0
+        Length of the bath in x direction, by default 0.0
     by : float, optional
-        _description_, by default 0.0
+        Length of the bath in y direction, by default 0.0
     bz : float, optional
-        _description_, by default 0.1
+        Length of the bath in z direction, by default 0.1
     dx : float, optional
-        _description_, by default 0.001
+        Characteristic length of the mesh, by default 0.001
+    verbose : bool, optional
+        If True, GMSH will print messages to the console, by default False
 
     Returns
     -------
-    _type_
-        _description_
+    Path
+        Path to the mesh file
     """
-
     path = utils.handle_mesh_name(mesh_name=mesh_name)
     # Initialize gmsh:
     gmsh.initialize()
+
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
+
     gmsh.model.add("SlabInBath")
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)

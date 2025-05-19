@@ -97,6 +97,12 @@ def app():
     help="Angle for the epicardial base",
     show_default=True,
 )
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
 def lv_ellipsoid(
     outname: Path,
     r_short_endo: float = 7.0,
@@ -108,6 +114,7 @@ def lv_ellipsoid(
     mu_base_endo: float = -math.acos(5 / 17),
     mu_apex_epi: float = -math.pi,
     mu_base_epi: float = -math.acos(5 / 20),
+    verbose: bool = False,
 ):
     from .lv_ellipsoid import lv_ellipsoid
 
@@ -122,6 +129,7 @@ def lv_ellipsoid(
         mu_apex_endo=mu_apex_endo,
         mu_apex_epi=mu_apex_epi,
         psize_ref=psize_ref,
+        verbose=verbose,
     )
 
 
@@ -201,6 +209,12 @@ def lv_ellipsoid(
     help="Angle for the epicardial base",
     show_default=True,
 )
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
 def lv_ellipsoid_2D(
     outname: Path,
     r_short_endo: float = 7.0,
@@ -212,6 +226,7 @@ def lv_ellipsoid_2D(
     mu_base_endo: float = -math.acos(5 / 17),
     mu_apex_epi: float = -math.pi,
     mu_base_epi: float = -math.acos(5 / 20),
+    verbose: bool = False,
 ):
     from .lv_ellipsoid import lv_ellipsoid_2D
 
@@ -226,6 +241,7 @@ def lv_ellipsoid_2D(
         mu_apex_endo=mu_apex_endo,
         mu_apex_epi=mu_apex_epi,
         psize_ref=psize_ref,
+        verbose=verbose,
     )
 
 
@@ -374,6 +390,12 @@ def lv_ellipsoid_2D(
     help="Dilation of rv epi ellipsoid in the z-direction",
     show_default=True,
 )
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
 def biv_ellipsoid(
     outname: Path,
     char_length: float = 0.5,
@@ -395,6 +417,7 @@ def biv_ellipsoid(
     a_epi_rv: float = 4.0,
     b_epi_rv: float = 2.5,
     c_epi_rv: float = 2.0,
+    verbose: bool = False,
 ):
     from .biv_ellipsoid import biv_ellipsoid
 
@@ -419,6 +442,7 @@ def biv_ellipsoid(
         a_epi_rv=a_epi_rv,
         b_epi_rv=b_epi_rv,
         c_epi_rv=c_epi_rv,
+        verbose=verbose,
     )
 
 
@@ -603,6 +627,12 @@ def biv_ellipsoid(
     help="Dilation of rv epi ellipsoid in the z-direction",
     show_default=True,
 )
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
 def biv_ellipsoid_torso(
     outname: Path,
     char_length: float = 0.5,
@@ -629,6 +659,7 @@ def biv_ellipsoid_torso(
     a_epi_rv: float = 4.0,
     b_epi_rv: float = 2.5,
     c_epi_rv: float = 2.0,
+    verbose: bool = False,
 ):
     from .biv_ellipsoid import biv_ellipsoid_torso
 
@@ -658,6 +689,7 @@ def biv_ellipsoid_torso(
         a_epi_rv=a_epi_rv,
         b_epi_rv=b_epi_rv,
         c_epi_rv=c_epi_rv,
+        verbose=verbose,
     )
 
 
@@ -789,6 +821,7 @@ def slab_in_bath(
     by: float = 0.0,
     bz: float = 0.1,
     dx: float = 0.01,
+    verbose: bool = False,
 ):
     from .slab import slab_in_bath
 
@@ -801,6 +834,7 @@ def slab_in_bath(
         by=by,
         bz=bz,
         dx=dx,
+        verbose=verbose,
     )
 
 
