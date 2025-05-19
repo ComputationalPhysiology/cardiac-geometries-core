@@ -7,6 +7,7 @@ from click.testing import CliRunner
 @pytest.mark.parametrize(
     "script",
     [
+        cli.cylinder,
         cli.slab,
         cli.slab_in_bath,
         cli.lv_ellipsoid,
@@ -15,6 +16,7 @@ from click.testing import CliRunner
         cli.biv_ellipsoid_torso,
     ],
     ids=[
+        "cylinder",
         "slab",
         "slab_in_bath",
         "lv_ellipsoid",

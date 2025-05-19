@@ -804,9 +804,76 @@ def slab_in_bath(
     )
 
 
+@click.command()
+@click.argument(
+    "outname",
+    required=True,
+    type=click.Path(
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        readable=True,
+        resolve_path=True,
+    ),
+)
+@click.option(
+    "--ri",
+    default=10.0,
+    type=float,
+    help="Inner radius of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--ro",
+    default=20.0,
+    type=float,
+    help="Outer radius of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--height",
+    default=40.0,
+    type=float,
+    help="Height of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--char-length",
+    default=10.0,
+    type=float,
+    help="Characteristic length of mesh",
+    show_default=True,
+)
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
+def cylinder(
+    outname: Path,
+    ri: float = 10.0,
+    ro: float = 20.0,
+    height: float = 40.0,
+    char_length: float = 10.0,
+    verbose: bool = False,
+):
+    from .cylinder import cylinder
+
+    cylinder(
+        mesh_name=outname,
+        inner_radius=ri,
+        outer_radius=ro,
+        height=height,
+        char_length=char_length,
+        verbose=verbose,
+    )
+
+
 app.add_command(lv_ellipsoid)
 app.add_command(lv_ellipsoid_2D)
 app.add_command(biv_ellipsoid)
 app.add_command(biv_ellipsoid_torso)
 app.add_command(slab)
 app.add_command(slab_in_bath)
+app.add_command(cylinder)
