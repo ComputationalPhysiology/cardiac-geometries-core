@@ -113,8 +113,8 @@ def prolate_lv_ellipsoid(
     )
 
 
-def create_benchmark_geometry_land15():
-    return lv_ellipsoid_flat_base()
+def create_benchmark_geometry_land15(mesh_name: str | Path = ""):
+    return lv_ellipsoid_flat_base(mesh_name=mesh_name)
 
 
 def lv_ellipsoid_flat_base(

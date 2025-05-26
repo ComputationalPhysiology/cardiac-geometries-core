@@ -1,70 +1,51 @@
-from pathlib import Path
-
 import cardiac_geometries_core as cgc
 
 
-def test_lv_prolate_flat_base():
-    mesh_path = Path("prolate_lv_ellipsoid_flat_base.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_lv_prolate_flat_base(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.prolate_lv_ellipsoid_flat_base(mesh_path)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_lv_2D():
-    mesh_path = Path("lv_2D.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_lv_2D(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.lv_ellipsoid_2D(mesh_path)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_lv_prolate():
-    mesh_path = Path("prolate_lv_ellipsoid.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_lv_prolate(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.prolate_lv_ellipsoid(mesh_path)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_lv_flat_base():
-    mesh_path = Path("lv_ellipsoid_flat_base.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_lv_flat_base(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.lv_ellipsoid_flat_base(mesh_path)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_lv_simple():
-    mesh_path = Path("lv_ellipsoid.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_lv_simple(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.lv_ellipsoid(mesh_path, psize_ref=0.05)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_create_benchmark_geometry_land15():
-    path = cgc.create_benchmark_geometry_land15()
-    path.unlink(missing_ok=False)
+def test_create_benchmark_geometry_land15(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
+    cgc.create_benchmark_geometry_land15(mesh_name=mesh_path)
 
 
 def test_slab(tmp_path):
-    mesh_name = tmp_path / "mesh.msh"
-    path = cgc.slab(mesh_name)
-    path.unlink(missing_ok=False)
+    mesh_path = tmp_path.with_suffix(".msh")
+    cgc.slab(mesh_name=mesh_path)
 
 
-def test_biv_ellipsoid():
-    mesh_path = Path("biv_ellipsoid.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_biv_ellipsoid(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.biv_ellipsoid(mesh_name=mesh_path)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_biv_ellipsoid_torso():
-    mesh_path = Path("biv_ellipsoid_torso.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_biv_ellipsoid_torso(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.biv_ellipsoid_torso(mesh_name=mesh_path)
-    mesh_path.unlink(missing_ok=False)
 
 
-def test_cylinder():
-    mesh_path = Path("cylinder.msh")
-    mesh_path.unlink(missing_ok=True)
+def test_cylinder(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
     cgc.cylinder(mesh_name=mesh_path)
-    mesh_path.unlink(missing_ok=False)
