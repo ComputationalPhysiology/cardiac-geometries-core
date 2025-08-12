@@ -8,6 +8,8 @@ from click.testing import CliRunner
     "script",
     [
         cli.cylinder,
+        cli.cylinder_flat_sides,
+        cli.cylinder_D_shaped,
         cli.slab,
         cli.slab_in_bath,
         cli.lv_ellipsoid,
@@ -17,6 +19,8 @@ from click.testing import CliRunner
     ],
     ids=[
         "cylinder",
+        "cylinder_flat_sides",
+        "cylinder_D_shaped",
         "slab",
         "slab_in_bath",
         "lv_ellipsoid",
