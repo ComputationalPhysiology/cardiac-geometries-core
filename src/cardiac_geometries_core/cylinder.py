@@ -97,94 +97,112 @@ def cylinder(
     return path
 
 
-def cylinder_flat_sides(
+def cylinder_racetrack(
     mesh_name: str | Path = "cylinder_flat_sides.msh",
-    inner_radius: float = 10.0,
+    inner_radius: float = 13.0,
     outer_radius: float = 20.0,
     height: float = 40.0,
-    flat_distance: float = 8.0,
-    char_length: float = 3.0,
+    inner_flat_face_distance: float = 10.0,
+    outer_flat_face_distance: float = 17.0,
+    char_length: float = 10.0,
     verbose: bool = True,
 ):
-    """
-    Create a thick cylindrical shell mesh with two flat inner sides using GMSH.
+    """Create a racetrack-shaped thick cylindrical shell mesh using GMSH.
 
-    The flat sides are parallel to the YZ-plane, located at x = +/- flat_distance.
+    Both the inner and outer surfaces have two flat faces on opposite sides.
 
     Parameters
     ----------
     mesh_name : str or Path, optional
-        Name of the mesh file to be created.
+        Name of the mesh file, by default "cylinder-d-shaped.msh".
     inner_radius : float
-        The radius of the inner cylindrical surfaces.
+        The radius of the curved part of the inner surface, default is 13.0.
     outer_radius : float
-        The radius of the outer cylindrical surface.
+        Outer radius of the cylinder, default is 20.0.
     height : float
-        The height of the cylinder.
-    flat_distance : float
-        The distance from the center (x=0) to the flat inner surfaces.
-        This value must be positive and less than inner_radius.
+        Height of the cylinder, default is 40.0.
+    inner_flat_face_distance : float
+        The distance of the inner flat face from the center (along the x-axis).
+        This value must be less than inner_radius. Default is 10.0.
+    outer_flat_face_distance : float
+        The distance of the outer flat face from the center (along the x-axis).
+        This value must be less than outer_radius. Default is 17.0.
     char_length : float
-        The characteristic length of the mesh elements.
+        Characteristic length of the mesh, default is 10.0.
     verbose : bool
-        If True, GMSH will print messages to the console.
+        If True, GMSH will print messages to the console, default is True.
     """
-    path = utils.handle_mesh_name(mesh_name=mesh_name)
+    if inner_flat_face_distance >= inner_radius:
+        raise ValueError("The 'inner_flat_face_distance' must be less than the 'inner_radius'.")
+    if outer_flat_face_distance >= outer_radius:
+        raise ValueError("The 'outer_flat_face_distance' must be less than the 'outer_radius'.")
 
-    # Validate the input to ensure the geometry is valid
-    if not 0 < flat_distance < inner_radius:
-        raise ValueError("The 'flat_distance' must be positive and smaller than 'inner_radius'.")
+    path = utils.handle_mesh_name(mesh_name=mesh_name)
 
     gmsh.initialize()
     if not verbose:
         gmsh.option.setNumber("General.Verbosity", 0)
 
-    # Use the filename as the model name
-    gmsh.model.add(path.stem)
+    # --- Geometry Creation ---
 
-    # --- 1. Define the Geometry ---
-
-    # Create the main outer cylinder
-    outer_cylinder = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, outer_radius)
-
-    # Create the base for the inner cutting tool
-    inner_tool_base = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, inner_radius)
-
-    # Create two large boxes that will be used to slice the inner cylinder.
-    # We make them slightly larger than the inner cylinder to ensure a clean cut.
-    box_dx = outer_radius  # A sufficiently large dimension
-    box_dy = 2 * outer_radius
-    box_dz = height
-
-    # Box to cut the positive-x side
-    cutter1 = gmsh.model.occ.addBox(flat_distance, -outer_radius, 0, box_dx, box_dy, box_dz)
-    # Box to cut the negative-x side
-    cutter2 = gmsh.model.occ.addBox(
-        -flat_distance - box_dx, -outer_radius, 0, box_dx, box_dy, box_dz
+    # 1. Create the outer racetrack-shaped cylinder.
+    outer_cylinder_full = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, outer_radius)
+    # Cutter for the positive-x side
+    outer_cutter_pos = gmsh.model.occ.addBox(
+        outer_flat_face_distance,
+        -outer_radius,
+        -height * 0.1,
+        outer_radius,
+        2 * outer_radius,
+        height * 1.2,
+    )
+    # Cutter for the negative-x side
+    outer_cutter_neg = gmsh.model.occ.addBox(
+        -outer_flat_face_distance - outer_radius,
+        -outer_radius,
+        -height * 0.1,
+        outer_radius,
+        2 * outer_radius,
+        height * 1.2,
+    )
+    # Cut the full cylinder with both boxes
+    outer_shape, _ = gmsh.model.occ.cut(
+        [(3, outer_cylinder_full)], [(3, outer_cutter_pos), (3, outer_cutter_neg)], removeTool=True
     )
 
-    # --- 2. Perform Boolean Operations ---
-
-    # Cut the inner cylinder with the two boxes to create the final cutting tool
-    # The result of the cut is the first element in the returned 'out' list
-    tool, _ = gmsh.model.occ.cut(
-        [(3, inner_tool_base)], [(3, cutter1), (3, cutter2)], removeObject=True, removeTool=True
+    # 2. Create the inner racetrack-shaped volume that will be subtracted.
+    inner_cylinder_full = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, inner_radius)
+    # Cutter for the positive-x side
+    inner_cutter_pos = gmsh.model.occ.addBox(
+        inner_flat_face_distance,
+        -inner_radius,
+        -height * 0.1,
+        inner_radius,
+        2 * inner_radius,
+        height * 1.2,
+    )
+    # Cutter for the negative-x side
+    inner_cutter_neg = gmsh.model.occ.addBox(
+        -inner_flat_face_distance - inner_radius,
+        -inner_radius,
+        -height * 0.1,
+        inner_radius,
+        2 * inner_radius,
+        height * 1.2,
+    )
+    # Cut the full cylinder with both boxes
+    inner_tool, _ = gmsh.model.occ.cut(
+        [(3, inner_cylinder_full)], [(3, inner_cutter_pos), (3, inner_cutter_neg)], removeTool=True
     )
 
-    # Cut the final tool from the outer cylinder to get the desired shell
-    # The 'shell_map' is crucial as it tells us which new surfaces correspond
-    # to the boundaries of the original shapes.
-    shell, shell_map = gmsh.model.occ.cut(
-        [(3, outer_cylinder)], tool, removeObject=True, removeTool=True
-    )
+    # 3. Subtract the inner shape from the outer shape.
+    final_shell, _ = gmsh.model.occ.cut(outer_shape, inner_tool, removeTool=True)
 
     gmsh.model.occ.synchronize()
 
-    # --- 3. Assign Physical Groups ---
-
-    # The final volume
-    gmsh.model.addPhysicalGroup(3, [v[1] for v in shell], tag=101, name="VOLUME")
-
+    # --- Physical Group Assignment ---
+    # This section identifies each surface by its geometric properties (location/shape)
+    # which is more reliable than assuming a fixed order.
     surfaces = gmsh.model.occ.getEntities(dim=2)
 
     gmsh.model.addPhysicalGroup(
@@ -216,13 +234,13 @@ def cylinder_flat_sides(
         dim=surfaces[4][0],
         tags=[surfaces[4][1]],
         tag=5,
-        name="OUTSIDE",
+        name="OUTSIDE_CURVED1",
     )
     gmsh.model.addPhysicalGroup(
         dim=surfaces[5][0],
         tags=[surfaces[5][1]],
         tag=6,
-        name="TOP",
+        name="OUTSIDE_FLAT1",
     )
     gmsh.model.addPhysicalGroup(
         dim=surfaces[6][0],
@@ -230,20 +248,38 @@ def cylinder_flat_sides(
         tag=7,
         name="BOTTOM",
     )
-    gmsh.model.addPhysicalGroup(dim=3, tags=[t[1] for t in shell], tag=8, name="VOLUME")
+    gmsh.model.addPhysicalGroup(
+        dim=surfaces[7][0],
+        tags=[surfaces[7][1]],
+        tag=8,
+        name="OUTSIDE_FLAT2",
+    )
+    gmsh.model.addPhysicalGroup(
+        dim=surfaces[8][0],
+        tags=[surfaces[8][1]],
+        tag=9,
+        name="TOP",
+    )
+    gmsh.model.addPhysicalGroup(
+        dim=surfaces[9][0],
+        tags=[surfaces[9][1]],
+        tag=10,
+        name="OUTSIDE_CURVED2",
+    )
 
-    # --- 4. Generate Mesh and Save ---
+    gmsh.model.addPhysicalGroup(dim=3, tags=[t[1] for t in final_shell], tag=11, name="VOLUME")
 
+    # --- Meshing ---
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
-
     gmsh.model.mesh.generate(3)
-    gmsh.model.mesh.optimize("Netgen")
+    gmsh.model.mesh.optimize("Netgen")  # Optional: optimize mesh quality
 
+    # --- Save and Finalize ---
     gmsh.write(path.as_posix())
     gmsh.finalize()
 
-    print(f"Cylinder mesh with flat inner sides generated and saved to '{path}'")
+    print(f"D-shaped cylindrical shell mesh generated and saved to {path.as_posix()}")
     return path
 
 
@@ -273,7 +309,7 @@ def cylinder_D_shaped(
         Height of the cylinder, default is 40.0.
     inner_flat_face_distance : float
         The distance of the inner flat face from the center (along the x-axis).
-        This value must be less than inner_radius. Default is 5.0.
+        This value "must be less than inner_radius. Default is 5.0.
     outer_flat_face_distance : float
         The distance of the outer flat face from the center (along the x-axis).
         This value must be less than outer_radius. Default is 15.0.

@@ -918,7 +918,7 @@ def cylinder(
 )
 @click.option(
     "--ri",
-    default=10.0,
+    default=13.0,
     type=float,
     help="Inner radius of the cylinder",
     show_default=True,
@@ -938,12 +938,24 @@ def cylinder(
     show_default=True,
 )
 @click.option(
-    "--flat-distance",
-    default=8.0,
+    "--inner-flat-face-distance",
+    "-if",
+    default=10.0,
     type=float,
     help=(
-        "The distance from the center (x=0) to the flat inner surfaces."
-        "This value must be positive and less than inner_radius."
+        "The distance of the inner flat face from the center (along the x-axis)."
+        "This value must be less than inner_radius. Default is 5.0."
+    ),
+    show_default=True,
+)
+@click.option(
+    "--outer-flat-face-distance",
+    "-of",
+    default=17.0,
+    type=float,
+    help=(
+        "The distance of the outer flat face from the center (along the x-axis)."
+        "This value must be less than outer_radius. Default is 15.0."
     ),
     show_default=True,
 )
@@ -960,23 +972,25 @@ def cylinder(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
-def cylinder_flat_sides(
+def cylinder_racetrack(
     outname: Path,
-    ri: float = 10.0,
+    ri: float = 13.0,
     ro: float = 20.0,
     height: float = 40.0,
-    flat_distance: float = 8.0,
+    inner_flat_face_distance: float = 10.0,
+    outer_flat_face_distance: float = 17.0,
     char_length: float = 10.0,
     verbose: bool = False,
 ):
-    from .cylinder import cylinder_flat_sides
+    from .cylinder import cylinder_racetrack
 
-    cylinder_flat_sides(
+    cylinder_racetrack(
         mesh_name=outname,
         inner_radius=ri,
         outer_radius=ro,
         height=height,
-        flat_distance=flat_distance,
+        inner_flat_face_distance=inner_flat_face_distance,
+        outer_flat_face_distance=outer_flat_face_distance,
         char_length=char_length,
         verbose=verbose,
     )
@@ -1081,5 +1095,5 @@ app.add_command(biv_ellipsoid_torso)
 app.add_command(slab)
 app.add_command(slab_in_bath)
 app.add_command(cylinder)
-app.add_command(cylinder_flat_sides)
+app.add_command(cylinder_racetrack)
 app.add_command(cylinder_D_shaped)

@@ -8,7 +8,7 @@ from click.testing import CliRunner
     "script",
     [
         cli.cylinder,
-        cli.cylinder_flat_sides,
+        cli.cylinder_racetrack,
         cli.cylinder_D_shaped,
         cli.slab,
         cli.slab_in_bath,
@@ -19,7 +19,7 @@ from click.testing import CliRunner
     ],
     ids=[
         "cylinder",
-        "cylinder_flat_sides",
+        "cylinder_racetrack",
         "cylinder_D_shaped",
         "slab",
         "slab_in_bath",
