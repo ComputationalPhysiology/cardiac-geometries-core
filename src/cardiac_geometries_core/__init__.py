@@ -9,6 +9,8 @@ from .lv_ellipsoid import lv_ellipsoid_2D
 from .slab import slab
 from .slab import slab_in_bath
 from .cylinder import cylinder
+from .cylinder import cylinder_racetrack
+from .cylinder import cylinder_D_shaped
 
 
 __all__ = [
@@ -23,4 +25,6 @@ __all__ = [
     "biv_ellipsoid_torso",
     "lv_ellipsoid_2D",
     "cylinder",
+    "cylinder_racetrack",
+    "cylinder_D_shaped",
 ]

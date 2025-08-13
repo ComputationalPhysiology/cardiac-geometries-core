@@ -88,7 +88,6 @@ def biv_ellipsoid(
 
     # Subtract LV epicardium from RV endo
     rv_endo, _ = gmsh.model.occ.cut(dim_tag_rv_endo, dim_tag_lv, removeTool=False)
-
     # Combine the two endocardial volumes
     endo, _ = gmsh.model.occ.fuse(rv_endo, dim_tag_lv_endo)
     # Combine the two epicardial volumes
