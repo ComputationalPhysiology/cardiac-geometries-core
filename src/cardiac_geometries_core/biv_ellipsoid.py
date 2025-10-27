@@ -1,481 +1,272 @@
+import logging
+import gmsh
+
 import math
 from pathlib import Path
 
-import gmsh
-
 from . import utils
+
+logger = logging.getLogger(__name__)
+
+
+def within_bounding_box(
+    box1: tuple[float, float, float, float, float, float],
+    box2: tuple[float, float, float, float, float, float],
+) -> bool:
+    """Check if box1 is within box2. Each box is defined by (xmin, ymin, zmin, xmax, ymax, zmax)."""
+    return (
+        box1[0] >= box2[0]
+        and box1[1] >= box2[1]
+        and box1[2] >= box2[2]
+        and box1[3] <= box2[3]
+        and box1[4] <= box2[4]
+        and box1[5] <= box2[5]
+    )
 
 
 def biv_ellipsoid(
     mesh_name: str | Path = "",
-    center_lv_x: float = 0.0,
-    center_lv_y: float = 0.0,
-    center_lv_z: float = 0.0,
-    radius_lv=1.0,
-    radius_lv_endo=1.0,
-    a_endo_lv: float = 2.5,
-    b_endo_lv: float = 1.0,
-    c_endo_lv: float = 1.0,
-    a_epi_lv: float = 3.0,
-    b_epi_lv: float = 1.5,
-    c_epi_lv: float = 1.5,
-    center_rv_x: float = 0.0,
-    center_rv_y: float = 0.5,
-    center_rv_z: float = 0.0,
-    radius_rv=1.0,
-    radius_rv_endo=1.0,
-    a_endo_rv: float = 3.0,
-    b_endo_rv: float = 1.5,
-    c_endo_rv: float = 1.5,
-    a_epi_rv: float = 4.0,
-    b_epi_rv: float = 2.5,
-    c_epi_rv: float = 2.0,
-    angle1=-math.pi / 2,
-    angle2=math.pi / 2,
-    angle3=2 * math.pi,
-    base_x: float = 0.0,
-    char_length: float = 0.5,
+    char_length: float = 0.4,  # cm
+    base_cut_z: float = 2.5,
+    box_size: float = 15.0,  # Size of the cutting box
+    rv_wall_thickness: float = 0.4,  # cm
+    lv_wall_thickness: float = 0.5,  # cm
+    rv_offset_x: float = 3.0,
+    lv_radius_x: float = 2.0,
+    lv_radius_y: float = 1.8,
+    lv_radius_z: float = 3.25,
+    rv_radius_x: float = 1.9,
+    rv_radius_y: float = 2.5,
+    rv_radius_z: float = 3.0,
     verbose: bool = False,
-) -> Path:
-    center_lv = (center_lv_x, center_lv_y, center_lv_z)
-    center_rv = (center_rv_x, center_rv_y, center_rv_z)
-    path = utils.handle_mesh_name(mesh_name=mesh_name)
-    gmsh.initialize()
+):
+    """Create an idealized BiV geometry
 
+    Parameters
+    ----------
+    mesh_name : str | Path, optional
+        Path to the mesh, by default ""
+    char_length : float, optional
+        Characteristic length for mesh generation, by default 0.4
+    box_size : float, optional
+        Size of the cutting box, by default 15.0
+    lv_radius_x : float, optional
+        Radius of the left ventricle in the x-direction, by default 2.0
+    lv_radius_y : float, optional
+        Radius of the left ventricle in the y-direction, by default 1.8
+    lv_radius_z : float, optional
+        Radius of the left ventricle in the z-direction, by default 3.25
+    rv_radius_x : float, optional
+        Radius of the right ventricle in the x-direction, by default 1.9
+    rv_radius_y : float, optional
+        Radius of the right ventricle in the y-direction, by default 2.5
+    rv_radius_z : float, optional
+        Radius of the right ventricle in the z-direction, by default 3.0
+    verbose : bool, optional
+        Whether to print verbose output from gmsh, by default False
+
+    Returns
+    -------
+    Path
+        Path to the generated mesh file.
+
+    Raises
+    ------
+    RuntimeError
+        If mesh generation fails.
+    """
+    path = utils.handle_mesh_name(mesh_name=mesh_name)
+    # Initialize gmsh
+    gmsh.initialize()
     if not verbose:
         gmsh.option.setNumber("General.Verbosity", 0)
-
     gmsh.model.add("biv")
 
-    # Create a box for cutting the base
-    a_epi = max(a_epi_lv, a_epi_rv)
-    diam = -5 * a_epi  # Just make it sufficiently big
-    box_id = gmsh.model.occ.addBox(base_x, a_epi, a_epi, diam, diam, diam)
-    dim_tag_box = [(3, box_id)]
+    rv_center = (rv_offset_x, 0, 0)
+    lv_center = (0, 0, 0)
 
-    # LV epicardium
-    lv_id = gmsh.model.occ.addSphere(
-        *center_lv, radius=radius_lv, angle1=angle1, angle2=angle2, angle3=angle3
+    occ = gmsh.model.occ
+
+    lv_outer_s = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
+    occ.dilate(
+        [(3, lv_outer_s)],
+        lv_center[0],
+        lv_center[1],
+        lv_center[2],
+        lv_radius_x + lv_wall_thickness,
+        lv_radius_y + lv_wall_thickness,
+        lv_radius_z + lv_wall_thickness,
     )
-    dim_tag_lv = [(3, lv_id)]
+    lv_outer_center_of_mass = occ.getCenterOfMass(3, lv_outer_s)
+    lv_outer_bounding_box = occ.getBoundingBox(3, lv_outer_s)
+    logger.debug(f"LV outer: \n{lv_outer_center_of_mass}, \n{lv_outer_bounding_box}")
 
-    gmsh.model.occ.dilate(dim_tag_lv, *center_lv, a=a_epi_lv, b=b_epi_lv, c=c_epi_lv)
-
-    # LV endocardium
-    lv_endo_id = gmsh.model.occ.addSphere(
-        *center_lv, radius=radius_lv_endo, angle1=angle1, angle2=angle2, angle3=angle3
+    lv_inner_s = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
+    occ.dilate(
+        [(3, lv_inner_s)],
+        lv_center[0],
+        lv_center[1],
+        lv_center[2],
+        lv_radius_x,
+        lv_radius_y,
+        lv_radius_z,
     )
-    dim_tag_lv_endo = [(3, lv_endo_id)]
-    gmsh.model.occ.dilate(dim_tag_lv_endo, *center_lv, a=a_endo_lv, b=b_endo_lv, c=c_endo_lv)
+    lv_inner_center_of_mass = gmsh.model.occ.getCenterOfMass(3, lv_inner_s)
+    lv_inner_bounding_box = gmsh.model.occ.getBoundingBox(3, lv_inner_s)
+    logger.debug(f"LV inner: \n{lv_inner_center_of_mass}, \n{lv_inner_bounding_box}")
 
-    # RV epicardium
-    rv_id = gmsh.model.occ.addSphere(
-        *center_lv, radius=radius_rv, angle1=angle1, angle2=angle2, angle3=angle3
+    rv_outer_s = occ.addSphere(rv_center[0], rv_center[1], rv_center[2], 1)
+    occ.dilate(
+        [(3, rv_outer_s)],
+        rv_center[0],
+        rv_center[1],
+        rv_center[2],
+        rv_radius_x + rv_wall_thickness,
+        rv_radius_y + rv_wall_thickness,
+        rv_radius_z + rv_wall_thickness,
     )
-    dim_tag_rv = [(3, rv_id)]
+    rv_outer_center_of_mass = gmsh.model.occ.getCenterOfMass(3, rv_outer_s)
+    rv_outer_bounding_box = gmsh.model.occ.getBoundingBox(3, rv_outer_s)
+    logger.debug(f"RV outer: \n{rv_outer_center_of_mass}, \n{rv_outer_bounding_box}")
 
-    gmsh.model.occ.dilate(dim_tag_rv, *center_lv, a=a_epi_rv, b=b_epi_rv, c=c_epi_rv)
-    gmsh.model.occ.translate(dim_tag_rv, *center_rv)
-
-    # RV endocardium
-    rv_endo_id = gmsh.model.occ.addSphere(
-        *center_rv, radius=radius_rv_endo, angle1=angle1, angle2=angle2, angle3=angle3
+    rv_inner_s = occ.addSphere(rv_center[0], rv_center[1], rv_center[2], 1)
+    occ.dilate(
+        [(3, rv_inner_s)],
+        rv_center[0],
+        rv_center[1],
+        rv_center[2],
+        rv_radius_x,
+        rv_radius_y,
+        rv_radius_z,
     )
+    rv_inner_center_of_mass = gmsh.model.occ.getCenterOfMass(3, rv_inner_s)
+    rv_inner_bounding_box = gmsh.model.occ.getBoundingBox(3, rv_inner_s)
+    logger.debug(f"RV inner: \n{rv_inner_center_of_mass}, \n{rv_inner_bounding_box}")
 
-    dim_tag_rv_endo = [(3, rv_endo_id)]
-    gmsh.model.occ.dilate(dim_tag_rv_endo, *center_lv, a=a_endo_rv, b=b_endo_rv, c=c_endo_rv)
-    gmsh.model.occ.translate(dim_tag_rv_endo, *center_rv)
+    lv_wall, _ = occ.cut([(3, lv_outer_s)], [(3, lv_inner_s)])
+    rv_wall, _ = occ.cut([(3, rv_outer_s)], [(3, rv_inner_s)])
 
-    # Subtract LV epicardium from RV endo
-    rv_endo, _ = gmsh.model.occ.cut(dim_tag_rv_endo, dim_tag_lv, removeTool=False)
-
-    # Combine the two endocardial volumes
-    endo, _ = gmsh.model.occ.fuse(rv_endo, dim_tag_lv_endo)
-    # Combine the two epicardial volumes
-    epi, _ = gmsh.model.occ.fuse(dim_tag_lv, dim_tag_rv)
-
-    # Subtract the endocardial surfaces from the epicardial volumes
-    ov, _ = gmsh.model.occ.cut(epi, endo)
-    # And finally cut the base with the box
-    ov2, _ = gmsh.model.occ.cut(ov, dim_tag_box)
-
-    # Now we mark the different surfaces
-    surfaces = gmsh.model.occ.getEntities(dim=2)
-
-    gmsh.model.occ.synchronize()
-
-    # Use the GUI to find out which surfaces are which
-    # Alternatively we could do this programmatically using
-    # the following functions, but lets assume that the order
-    # remains the same.
-    # for surf in surfaces:
-    #     print(gmsh.model.occ.getCenterOfMass(surf[0], surf[1]))
-    #     print(gmsh.model.occ.getBoundingBox(surf[0], surf[1]))
-    #     print()
-
-    base_marker = 1
-    endo_lv_marker = 2
-    endo_rv_marker = 3
-    epi_marker = 4
-
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[1][0],
-        tags=[surfaces[1][1]],
-        tag=base_marker,
-        name="BASE",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[6][0],
-        tags=[surfaces[6][1], surfaces[7][1]],
-        tag=endo_lv_marker,
-        name="ENDO_LV",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[3][0],
-        tags=[surfaces[3][1], surfaces[4][1], surfaces[5][1]],
-        tag=endo_rv_marker,
-        name="ENDO_RV",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[0][0],
-        tags=[surfaces[0][1], surfaces[2][1]],
-        tag=epi_marker,
-        name="EPI",
+    # Create the myocardium by fusing the LV and RV walls
+    # However this will also contain extra bits inside the cavities, so we will cut those out next
+    myocardium1, _ = occ.fuse(
+        [(3, lv_wall[0][1])],
+        [(3, rv_wall[0][1])],
+        removeTool=True,
+        removeObject=True,
     )
 
-    gmsh.model.add_physical_group(dim=3, tags=[t[1] for t in ov2], tag=1)
+    # Now cut out the inner cavities of the LV to get the final myocardium with a solid septum
+    lv_inner_s = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
+    occ.dilate(
+        [(3, lv_inner_s)],
+        lv_center[0],
+        lv_center[1],
+        lv_center[2],
+        lv_radius_x,
+        lv_radius_y,
+        lv_radius_z,
+    )
+    # Here we remove the cells inside the LV cavity only
+    myocardium, _ = occ.cut(
+        [(3, myocardium1[0][1])], [(3, lv_inner_s)], removeTool=False, removeObject=True
+    )
 
+    # Truncate the top to create a flat base
+    trunc_box = occ.addBox(-box_size / 2, -box_size / 2, base_cut_z, box_size, box_size, box_size)
+    final_model, _ = occ.cut([(3, myocardium[0][1])], [(3, trunc_box)])
+
+    occ.synchronize()
+
+    surfaces = gmsh.model.getEntities(dim=2)
+
+    labels: dict[str, list[int]] = {
+        "LV_EPICARDIUM": [],
+        "RV_EPICARDIUM": [],
+        "LV_ENDOCARDIUM_FW": [],
+        "LV_ENDOCARDIUM_SEPTUM": [],
+        "RV_ENDOCARDIUM_FW": [],
+        "RV_ENDOCARDIUM_SEPTUM": [],
+        "BASE": [],
+    }
+
+    for s in surfaces:
+        if s[1] == 9:
+            # This is the final LV endocardial surface that we cut off
+            continue
+
+        center_of_mass = occ.getCenterOfMass(s[0], s[1])
+        bounding_box = occ.getBoundingBox(s[0], s[1])
+        logger.debug("\n ---------------------------- ")
+        logger.debug(s)
+        logger.debug(center_of_mass)
+        logger.debug(bounding_box)
+
+        if math.isclose(center_of_mass[2], base_cut_z):
+            logger.debug("  -> Base surface")
+            labels["BASE"].append(s[1])
+            continue
+
+        if within_bounding_box(bounding_box, lv_inner_bounding_box):
+            if center_of_mass[0] < 0:
+                labels["LV_ENDOCARDIUM_FW"].append(s[1])
+                logger.debug("  -> LV free wall endocardium")
+            else:
+                labels["LV_ENDOCARDIUM_SEPTUM"].append(s[1])
+                logger.debug("  -> LV septal endocardium")
+
+        elif within_bounding_box(bounding_box, rv_inner_bounding_box):
+            if center_of_mass[0] > rv_center[0]:
+                labels["RV_ENDOCARDIUM_FW"].append(s[1])
+                logger.debug("  -> RV free wall endocardium")
+            else:
+                labels["RV_ENDOCARDIUM_SEPTUM"].append(s[1])
+                logger.debug("  -> RV septal endocardium")
+
+        elif within_bounding_box(bounding_box, lv_outer_bounding_box):
+            labels["LV_EPICARDIUM"].append(s[1])
+            logger.debug("  -> LV epicardium")
+        elif within_bounding_box(bounding_box, rv_outer_bounding_box):
+            labels["RV_EPICARDIUM"].append(s[1])
+            logger.debug("  -> RV epicardium")
+        else:
+            raise RuntimeError("Surface does not fit any known category")
+
+    # Define Physical Groups for different surfaces
+    lv_epi = gmsh.model.addPhysicalGroup(2, labels["LV_EPICARDIUM"])
+    gmsh.model.setPhysicalName(2, lv_epi, "LV_EPI_FW")
+    rv_epi = gmsh.model.addPhysicalGroup(2, labels["RV_EPICARDIUM"])
+    gmsh.model.setPhysicalName(2, rv_epi, "RV_EPI_FW")
+    base = gmsh.model.addPhysicalGroup(2, labels["BASE"])
+    gmsh.model.setPhysicalName(2, base, "BASE")
+    lv_endo_fw = gmsh.model.addPhysicalGroup(2, labels["LV_ENDOCARDIUM_FW"])
+    gmsh.model.setPhysicalName(2, lv_endo_fw, "LV_ENDO_FW")
+    rv_endo_fw = gmsh.model.addPhysicalGroup(2, labels["RV_ENDOCARDIUM_FW"])
+    gmsh.model.setPhysicalName(2, rv_endo_fw, "RV_ENDO_FW")
+    rv_septum = gmsh.model.addPhysicalGroup(2, labels["RV_ENDOCARDIUM_SEPTUM"])
+    gmsh.model.setPhysicalName(2, rv_septum, "RV_SEPTUM")
+    lv_septum = gmsh.model.addPhysicalGroup(2, labels["LV_ENDOCARDIUM_SEPTUM"])
+    gmsh.model.setPhysicalName(2, lv_septum, "LV_SEPTUM")
+
+    # myocardium_group = gmsh.model.addPhysicalGroup(3, [volumes[0][1]])
+    myocardium_group = gmsh.model.add_physical_group(dim=3, tags=[t[1] for t in final_model], tag=1)
+    gmsh.model.setPhysicalName(3, myocardium_group, "Myocardium")
+
+    # Set mesh options
+    gmsh.option.setNumber("Mesh.Algorithm3D", 1)
+    gmsh.model.mesh.optimize("Netgen")
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
 
+    # Generate the 3D volumetric mesh
     gmsh.model.mesh.generate(3)
-    gmsh.model.mesh.optimize("Netgen")
 
+    # Save the mesh
     gmsh.write(path.as_posix())
+
+    # if "close" not in sys.argv:
+    #     logger.debug("Opening Gmsh GUI. Close window to exit.")
+    #     gmsh.fltk.run()
+
+    # Final
     gmsh.finalize()
-
     return path
-
-
-def biv_ellipsoid_torso(
-    mesh_name: str | Path = "",
-    heart_as_surface: bool = False,
-    torso_length: float = 20.0,
-    torso_width: float = 20.0,
-    torso_height: float = 20.0,
-    rotation_angle: float = math.pi / 6,
-    center_lv_x: float = 0.0,
-    center_lv_y: float = 0.0,
-    center_lv_z: float = 0.0,
-    radius_lv=1.0,
-    radius_lv_endo=1.0,
-    a_endo_lv: float = 2.5,
-    b_endo_lv: float = 1.0,
-    c_endo_lv: float = 1.0,
-    a_epi_lv: float = 3.0,
-    b_epi_lv: float = 1.5,
-    c_epi_lv: float = 1.5,
-    center_rv_x: float = 0.0,
-    center_rv_y: float = 0.5,
-    center_rv_z: float = 0.0,
-    radius_rv=1.0,
-    radius_rv_endo=1.0,
-    a_endo_rv: float = 3.0,
-    b_endo_rv: float = 1.5,
-    c_endo_rv: float = 1.5,
-    a_epi_rv: float = 4.0,
-    b_epi_rv: float = 2.5,
-    c_epi_rv: float = 2.0,
-    angle1=-math.pi / 2,
-    angle2=math.pi / 2,
-    angle3=2 * math.pi,
-    base_x: float = 0.0,
-    char_length: float = 0.5,
-    verbose: bool = False,
-) -> Path:
-    center_lv = (center_lv_x, center_lv_y, center_lv_z)
-    center_rv = (center_rv_x, center_rv_y, center_rv_z)
-    path = utils.handle_mesh_name(mesh_name=mesh_name)
-    gmsh.initialize()
-
-    if not verbose:
-        gmsh.option.setNumber("General.Verbosity", 0)
-
-    gmsh.model.add("biv")
-
-    # Create a box for cutting the base
-    a_epi = max(a_epi_lv, a_epi_rv)
-    diam = -5 * a_epi  # Just make it sufficiently big
-    box_id = gmsh.model.occ.addBox(base_x, a_epi, a_epi, diam, diam, diam)
-    dim_tag_box = [(3, box_id)]
-
-    # LV epicardium
-    lv_id = gmsh.model.occ.addSphere(
-        *center_lv, radius=radius_lv, angle1=angle1, angle2=angle2, angle3=angle3
-    )
-    dim_tag_lv = [(3, lv_id)]
-
-    gmsh.model.occ.dilate(dim_tag_lv, *center_lv, a=a_epi_lv, b=b_epi_lv, c=c_epi_lv)
-
-    # LV endocardium
-    lv_endo_id = gmsh.model.occ.addSphere(
-        *center_lv, radius=radius_lv_endo, angle1=angle1, angle2=angle2, angle3=angle3
-    )
-    dim_tag_lv_endo = [(3, lv_endo_id)]
-    gmsh.model.occ.dilate(dim_tag_lv_endo, *center_lv, a=a_endo_lv, b=b_endo_lv, c=c_endo_lv)
-
-    # RV epicardium
-    rv_id = gmsh.model.occ.addSphere(
-        *center_lv, radius=radius_rv, angle1=angle1, angle2=angle2, angle3=angle3
-    )
-    dim_tag_rv = [(3, rv_id)]
-
-    gmsh.model.occ.dilate(dim_tag_rv, *center_lv, a=a_epi_rv, b=b_epi_rv, c=c_epi_rv)
-    gmsh.model.occ.translate(dim_tag_rv, *center_rv)
-
-    # RV endocardium
-    rv_endo_id = gmsh.model.occ.addSphere(
-        *center_rv, radius=radius_rv_endo, angle1=angle1, angle2=angle2, angle3=angle3
-    )
-
-    dim_tag_rv_endo = [(3, rv_endo_id)]
-    gmsh.model.occ.dilate(dim_tag_rv_endo, *center_lv, a=a_endo_rv, b=b_endo_rv, c=c_endo_rv)
-    gmsh.model.occ.translate(dim_tag_rv_endo, *center_rv)
-
-    # Subtract LV epicardium from RV endo
-    rv_endo, _ = gmsh.model.occ.cut(dim_tag_rv_endo, dim_tag_lv, removeTool=False)
-
-    # Combine the two endocardial volumes
-    endo, _ = gmsh.model.occ.fuse(rv_endo, dim_tag_lv_endo)
-    # Combine the two epicardial volumes
-    epi, _ = gmsh.model.occ.fuse(dim_tag_lv, dim_tag_rv)
-
-    # Subtract the endocardial surfaces from the epicardial volumes
-    ov, _ = gmsh.model.occ.cut(epi, endo)
-    # And finally cut the base with the box
-    ov2, _ = gmsh.model.occ.cut(ov, dim_tag_box)
-
-    torso_tag = gmsh.model.occ.addBox(
-        -torso_length / 2.0,
-        -torso_width / 2.0,
-        -torso_height / 2.0,
-        torso_length,
-        torso_width,
-        torso_height,
-        3,
-    )
-
-    # Rotate torso around this point to align with realistic heart in torso
-    gmsh.model.occ.rotate([(3, torso_tag)], 0, 0, 0, 0, 0, 1, -rotation_angle)
-    gmsh.model.occ.rotate([(3, torso_tag)], 0, 0, 0, 0, 1, 0, rotation_angle)
-
-    if heart_as_surface:
-        mark_heart_as_surface(ov2, torso_tag)
-    else:
-        mark_heart_as_volume(ov2, torso_tag)
-
-    # gmsh.option.setNumber("Mesh.SaveAll", 1)
-    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
-    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
-
-    gmsh.model.mesh.generate(3)
-    gmsh.model.mesh.optimize("Netgen")
-
-    gmsh.write(path.as_posix())
-    gmsh.finalize()
-
-    return path
-
-
-def mark_heart_as_surface(ov2, torso_tag):
-    surfaces = gmsh.model.occ.getEntities(dim=2)
-    volumes = gmsh.model.occ.getEntities(dim=3)
-
-    gmsh.model.occ.cut(
-        [(3, torso_tag)],
-        ov2,
-    )
-
-    gmsh.model.occ.synchronize()
-
-    base_marker = 1
-    endo_lv_marker = 2
-    endo_rv_marker = 3
-    epi_marker = 4
-
-    side1_marker = 5
-    side2_marker = 6
-    side3_marker = 7
-    side4_marker = 8
-    side5_marker = 9
-    side6_marker = 10
-
-    tissue_marker = 11
-
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[0][0],
-        tags=[surfaces[0][1]],
-        tag=side1_marker,
-        name="TOP",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[1][0],
-        tags=[surfaces[1][1]],
-        tag=side2_marker,
-        name="LEFT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[2][0],
-        tags=[surfaces[2][1]],
-        tag=side3_marker,
-        name="FRONT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[3][0],
-        tags=[surfaces[3][1]],
-        tag=side4_marker,
-        name="RIGHT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[4][0],
-        tags=[surfaces[4][1]],
-        tag=side5_marker,
-        name="BACK",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[5][0],
-        tags=[surfaces[5][1]],
-        tag=side6_marker,
-        name="BOTTOM",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[7][0],
-        tags=[surfaces[7][1]],
-        tag=base_marker,
-        name="BASE",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[8][0],
-        tags=[surfaces[6][1], surfaces[8][1]],
-        tag=epi_marker,
-        name="EPI",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[9][0],
-        tags=[surfaces[9][1], surfaces[10][1], surfaces[11][1]],
-        tag=endo_rv_marker,
-        name="ENDO_RV",
-    )
-
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[12][0],
-        tags=[surfaces[12][1], surfaces[13][1]],
-        tag=endo_lv_marker,
-        name="ENDO_LV",
-    )
-
-    gmsh.model.add_physical_group(
-        dim=3,
-        tags=[volumes[0][1]],
-        tag=tissue_marker,
-        name="TISSUE",
-    )
-
-
-def mark_heart_as_volume(ov2, torso_tag):
-    surfaces = gmsh.model.occ.getEntities(dim=2)
-
-    gmsh.model.occ.fuse([(3, torso_tag)], ov2, removeTool=False)
-
-    volumes = gmsh.model.occ.getEntities(dim=3)
-
-    gmsh.model.occ.synchronize()
-
-    base_marker = 1
-    endo_lv_marker = 2
-    endo_rv_marker = 3
-    epi_marker = 4
-
-    side1_marker = 5
-    side2_marker = 6
-    side3_marker = 7
-    side4_marker = 8
-    side5_marker = 9
-    side6_marker = 10
-
-    tissue_marker = 11
-    heart_marker = 12
-
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[8][0],
-        tags=[surfaces[8][1]],
-        tag=side1_marker,
-        name="TOP",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[9][0],
-        tags=[surfaces[9][1]],
-        tag=side2_marker,
-        name="LEFT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[10][0],
-        tags=[surfaces[10][1]],
-        tag=side3_marker,
-        name="FRONT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[11][0],
-        tags=[surfaces[11][1]],
-        tag=side4_marker,
-        name="RIGHT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[12][0],
-        tags=[surfaces[12][1]],
-        tag=side5_marker,
-        name="BACK",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[13][0],
-        tags=[surfaces[13][1]],
-        tag=side6_marker,
-        name="BOTTOM",
-    )
-
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[0][0],
-        tags=[surfaces[0][1], surfaces[2][1]],
-        tag=epi_marker,
-        name="EPI",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[1][0],
-        tags=[surfaces[1][1]],
-        tag=base_marker,
-        name="BASE",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[3][0],
-        tags=[surfaces[3][1], surfaces[4][1], surfaces[5][1]],
-        tag=endo_rv_marker,
-        name="ENDO_RV",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[7][0],
-        tags=[surfaces[6][1], surfaces[7][1]],
-        tag=endo_lv_marker,
-        name="ENDO_LV",
-    )
-    gmsh.model.add_physical_group(
-        dim=3,
-        tags=[volumes[1][1]],
-        tag=tissue_marker,
-        name="TISSUE",
-    )
-    gmsh.model.add_physical_group(
-        dim=3,
-        tags=[volumes[0][1]],
-        tag=heart_marker,
-        name="HEART",
-    )

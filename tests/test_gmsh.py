@@ -41,11 +41,6 @@ def test_biv_ellipsoid(tmp_path):
     cgc.biv_ellipsoid(mesh_name=mesh_path)
 
 
-def test_biv_ellipsoid_torso(tmp_path):
-    mesh_path = tmp_path.with_suffix(".msh")
-    cgc.biv_ellipsoid_torso(mesh_name=mesh_path)
-
-
 def test_cylinder(tmp_path):
     mesh_path = tmp_path.with_suffix(".msh")
     cgc.cylinder(mesh_name=mesh_path)

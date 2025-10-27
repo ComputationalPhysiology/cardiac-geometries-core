@@ -265,129 +265,80 @@ def lv_ellipsoid_2D(
     show_default=True,
 )
 @click.option(
-    "--center-lv-x",
-    default=0.0,
-    type=float,
-    help="X-coordinate for the center of the lv",
-    show_default=True,
-)
-@click.option(
-    "--center-lv-y",
-    default=0.0,
-    type=float,
-    help="Y-coordinate for the center of the lv",
-    show_default=True,
-)
-@click.option(
-    "--center-lv-z",
-    default=0.0,
-    type=float,
-    help="Z-coordinate for the center of the lv",
-    show_default=True,
-)
-@click.option(
-    "--a-endo-lv",
+    "--base-cut-z",
     default=2.5,
     type=float,
-    help="Dilation of lv endo ellipsoid in the x-direction",
+    help="Z-coordinate of the base cut",
     show_default=True,
 )
 @click.option(
-    "--b-endo-lv",
-    default=1.0,
+    "--box-size",
+    default=15.0,
     type=float,
-    help="Dilation of lv endo ellipsoid in the y-direction",
+    help="Size of the cutting box",
     show_default=True,
 )
 @click.option(
-    "--c-endo-lv",
-    default=1.0,
+    "--rv-wall-thickness",
+    default=0.4,
     type=float,
-    help="Dilation of lv endo ellipsoid in the y-direction",
+    help="Thickness of the right ventricle wall",
     show_default=True,
 )
 @click.option(
-    "--a-epi-lv",
-    default=3.0,
-    type=float,
-    help="Dilation of lv epi ellipsoid in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--b-epi-lv",
-    default=1.5,
-    type=float,
-    help="Dilation of lv epi ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-epi-lv",
-    default=1.5,
-    type=float,
-    help="Dilation of lv epi ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--center-rv-x",
-    default=0.0,
-    type=float,
-    help="X-coordinate for the center of the rv",
-    show_default=True,
-)
-@click.option(
-    "--center-rv-y",
+    "--lv-wall-thickness",
     default=0.5,
     type=float,
-    help="Y-coordinate for the center of the rv",
+    help="Thickness of the left ventricle wall",
     show_default=True,
 )
 @click.option(
-    "--center-rv-z",
-    default=0.0,
-    type=float,
-    help="Z-coordinate for the center of the rv",
-    show_default=True,
-)
-@click.option(
-    "--a-endo-rv",
+    "--rv-offset-x",
     default=3.0,
     type=float,
-    help="Dilation of rv endo ellipsoid in the x-direction",
+    help="X-offset of the right ventricle",
     show_default=True,
 )
 @click.option(
-    "--b-endo-rv",
-    default=1.5,
-    type=float,
-    help="Dilation of rv endo ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-endo-rv",
-    default=1.5,
-    type=float,
-    help="Dilation of rv endo ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--a-epi-rv",
-    default=4.0,
-    type=float,
-    help="Dilation of rv epi ellipsoid in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--b-epi-rv",
-    default=2.5,
-    type=float,
-    help="Dilation of rv epi ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-epi-rv",
+    "--lv-radius-x",
     default=2.0,
     type=float,
-    help="Dilation of rv epi ellipsoid in the z-direction",
+    help="X-radius of the left ventricle",
+    show_default=True,
+)
+@click.option(
+    "--lv-radius-y",
+    default=1.8,
+    type=float,
+    help="Y-radius of the left ventricle",
+    show_default=True,
+)
+@click.option(
+    "--lv-radius-z",
+    default=3.25,
+    type=float,
+    help="Z-radius of the left ventricle",
+    show_default=True,
+)
+@click.option(
+    "--rv-radius-x",
+    default=1.9,
+    type=float,
+    help="X-radius of the right ventricle",
+    show_default=True,
+)
+@click.option(
+    "--rv-radius-y",
+    default=2.5,
+    type=float,
+    help="Y-radius of the right ventricle",
+    show_default=True,
+)
+@click.option(
+    "--rv-radius-z",
+    default=3.0,
+    type=float,
+    help="Z-radius of the right ventricle",
     show_default=True,
 )
 @click.option(
@@ -398,25 +349,18 @@ def lv_ellipsoid_2D(
 )
 def biv_ellipsoid(
     outname: Path,
-    char_length: float = 0.5,
-    center_lv_x: float = 0.0,
-    center_lv_y: float = 0.0,
-    center_lv_z: float = 0.0,
-    a_endo_lv: float = 2.5,
-    b_endo_lv: float = 1.0,
-    c_endo_lv: float = 1.0,
-    a_epi_lv: float = 3.0,
-    b_epi_lv: float = 1.5,
-    c_epi_lv: float = 1.5,
-    center_rv_x: float = 0.0,
-    center_rv_y: float = 0.5,
-    center_rv_z: float = 0.0,
-    a_endo_rv: float = 3.0,
-    b_endo_rv: float = 1.5,
-    c_endo_rv: float = 1.5,
-    a_epi_rv: float = 4.0,
-    b_epi_rv: float = 2.5,
-    c_epi_rv: float = 2.0,
+    char_length: float = 0.4,  # cm
+    base_cut_z: float = 2.5,
+    box_size: float = 15.0,  # Size of the cutting box
+    rv_wall_thickness: float = 0.4,  # cm
+    lv_wall_thickness: float = 0.5,  # cm
+    rv_offset_x: float = 3.0,
+    lv_radius_x: float = 2.0,
+    lv_radius_y: float = 1.8,
+    lv_radius_z: float = 3.25,
+    rv_radius_x: float = 1.9,
+    rv_radius_y: float = 2.5,
+    rv_radius_z: float = 3.0,
     verbose: bool = False,
 ):
     from .biv_ellipsoid import biv_ellipsoid
@@ -424,271 +368,17 @@ def biv_ellipsoid(
     biv_ellipsoid(
         mesh_name=outname,
         char_length=char_length,
-        center_lv_x=center_lv_x,
-        center_lv_y=center_lv_y,
-        center_lv_z=center_lv_z,
-        a_endo_lv=a_endo_lv,
-        b_endo_lv=b_endo_lv,
-        c_endo_lv=c_endo_lv,
-        a_epi_lv=a_epi_lv,
-        b_epi_lv=b_epi_lv,
-        c_epi_lv=c_epi_lv,
-        center_rv_x=center_rv_x,
-        center_rv_y=center_rv_y,
-        center_rv_z=center_rv_z,
-        a_endo_rv=a_endo_rv,
-        b_endo_rv=b_endo_rv,
-        c_endo_rv=c_endo_rv,
-        a_epi_rv=a_epi_rv,
-        b_epi_rv=b_epi_rv,
-        c_epi_rv=c_epi_rv,
-        verbose=verbose,
-    )
-
-
-@click.command(help="Create BiV ellipsoidal geometry embedded in a torso")
-@click.argument(
-    "outname",
-    required=True,
-    type=click.Path(
-        file_okay=True,
-        dir_okay=False,
-        writable=True,
-        readable=True,
-        resolve_path=True,
-    ),
-)
-@click.option(
-    "--char-length",
-    default=0.5,
-    type=float,
-    help="Characteristic length of mesh",
-    show_default=True,
-)
-@click.option(
-    "--heart-as-surface/--heart-as-volume",
-    default=False,
-    help="Whether the heart should be a surface of a volume inside the torso",
-    show_default=True,
-)
-@click.option(
-    "--torso-length",
-    default=20,
-    type=float,
-    help="Length of torso in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--torso-width",
-    default=20,
-    type=float,
-    help="Length of torso in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--torso-height",
-    default=20,
-    type=float,
-    help="Length of torso in the z-direction",
-    show_default=True,
-)
-@click.option(
-    "--rotation-angle",
-    default=math.pi / 6,
-    type=float,
-    help=(
-        "Angle to rotate the torso in order to object realistic position of the heart in a torso"
-    ),
-    show_default=True,
-)
-@click.option(
-    "--center-lv-x",
-    default=0.0,
-    type=float,
-    help="X-coordinate for the center of the lv",
-    show_default=True,
-)
-@click.option(
-    "--center-lv-y",
-    default=0.0,
-    type=float,
-    help="Y-coordinate for the center of the lv",
-    show_default=True,
-)
-@click.option(
-    "--center-lv-z",
-    default=0.0,
-    type=float,
-    help="Z-coordinate for the center of the lv",
-    show_default=True,
-)
-@click.option(
-    "--a-endo-lv",
-    default=2.5,
-    type=float,
-    help="Dilation of lv endo ellipsoid in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--b-endo-lv",
-    default=1.0,
-    type=float,
-    help="Dilation of lv endo ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-endo-lv",
-    default=1.0,
-    type=float,
-    help="Dilation of lv endo ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--a-epi-lv",
-    default=3.0,
-    type=float,
-    help="Dilation of lv epi ellipsoid in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--b-epi-lv",
-    default=1.5,
-    type=float,
-    help="Dilation of lv epi ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-epi-lv",
-    default=1.5,
-    type=float,
-    help="Dilation of lv epi ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--center-rv-x",
-    default=0.0,
-    type=float,
-    help="X-coordinate for the center of the rv",
-    show_default=True,
-)
-@click.option(
-    "--center-rv-y",
-    default=0.5,
-    type=float,
-    help="Y-coordinate for the center of the rv",
-    show_default=True,
-)
-@click.option(
-    "--center-rv-z",
-    default=0.0,
-    type=float,
-    help="Z-coordinate for the center of the rv",
-    show_default=True,
-)
-@click.option(
-    "--a-endo-rv",
-    default=3.0,
-    type=float,
-    help="Dilation of rv endo ellipsoid in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--b-endo-rv",
-    default=1.5,
-    type=float,
-    help="Dilation of rv endo ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-endo-rv",
-    default=1.5,
-    type=float,
-    help="Dilation of rv endo ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--a-epi-rv",
-    default=4.0,
-    type=float,
-    help="Dilation of rv epi ellipsoid in the x-direction",
-    show_default=True,
-)
-@click.option(
-    "--b-epi-rv",
-    default=2.5,
-    type=float,
-    help="Dilation of rv epi ellipsoid in the y-direction",
-    show_default=True,
-)
-@click.option(
-    "--c-epi-rv",
-    default=2.0,
-    type=float,
-    help="Dilation of rv epi ellipsoid in the z-direction",
-    show_default=True,
-)
-@click.option(
-    "--verbose/--no-verbose",
-    default=False,
-    help="Whether to print GMSH messages to the console",
-    show_default=True,
-)
-def biv_ellipsoid_torso(
-    outname: Path,
-    char_length: float = 0.5,
-    heart_as_surface: bool = True,
-    torso_length: float = 20.0,
-    torso_width: float = 20.0,
-    torso_height: float = 20.0,
-    rotation_angle: float = math.pi / 6,
-    center_lv_x: float = 0.0,
-    center_lv_y: float = 0.0,
-    center_lv_z: float = 0.0,
-    a_endo_lv: float = 2.5,
-    b_endo_lv: float = 1.0,
-    c_endo_lv: float = 1.0,
-    a_epi_lv: float = 3.0,
-    b_epi_lv: float = 1.5,
-    c_epi_lv: float = 1.5,
-    center_rv_x: float = 0.0,
-    center_rv_y: float = 0.5,
-    center_rv_z: float = 0.0,
-    a_endo_rv: float = 3.0,
-    b_endo_rv: float = 1.5,
-    c_endo_rv: float = 1.5,
-    a_epi_rv: float = 4.0,
-    b_epi_rv: float = 2.5,
-    c_epi_rv: float = 2.0,
-    verbose: bool = False,
-):
-    from .biv_ellipsoid import biv_ellipsoid_torso
-
-    biv_ellipsoid_torso(
-        mesh_name=outname,
-        char_length=char_length,
-        heart_as_surface=heart_as_surface,
-        torso_length=torso_length,
-        torso_height=torso_height,
-        torso_width=torso_width,
-        rotation_angle=rotation_angle,
-        center_lv_x=center_lv_x,
-        center_lv_y=center_lv_y,
-        center_lv_z=center_lv_z,
-        a_endo_lv=a_endo_lv,
-        b_endo_lv=b_endo_lv,
-        c_endo_lv=c_endo_lv,
-        a_epi_lv=a_epi_lv,
-        b_epi_lv=b_epi_lv,
-        c_epi_lv=c_epi_lv,
-        center_rv_x=center_rv_x,
-        center_rv_y=center_rv_y,
-        center_rv_z=center_rv_z,
-        a_endo_rv=a_endo_rv,
-        b_endo_rv=b_endo_rv,
-        c_endo_rv=c_endo_rv,
-        a_epi_rv=a_epi_rv,
-        b_epi_rv=b_epi_rv,
-        c_epi_rv=c_epi_rv,
+        base_cut_z=base_cut_z,
+        box_size=box_size,
+        rv_wall_thickness=rv_wall_thickness,
+        lv_wall_thickness=lv_wall_thickness,
+        rv_offset_x=rv_offset_x,
+        lv_radius_x=lv_radius_x,
+        lv_radius_y=lv_radius_y,
+        lv_radius_z=lv_radius_z,
+        rv_radius_x=rv_radius_x,
+        rv_radius_y=rv_radius_y,
+        rv_radius_z=rv_radius_z,
         verbose=verbose,
     )
 
@@ -1091,7 +781,6 @@ def cylinder_D_shaped(
 app.add_command(lv_ellipsoid)
 app.add_command(lv_ellipsoid_2D)
 app.add_command(biv_ellipsoid)
-app.add_command(biv_ellipsoid_torso)
 app.add_command(slab)
 app.add_command(slab_in_bath)
 app.add_command(cylinder)

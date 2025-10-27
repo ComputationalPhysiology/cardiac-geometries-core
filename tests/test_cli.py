@@ -15,7 +15,6 @@ from click.testing import CliRunner
         cli.lv_ellipsoid,
         cli.lv_ellipsoid_2D,
         cli.biv_ellipsoid,
-        cli.biv_ellipsoid_torso,
     ],
     ids=[
         "cylinder",
@@ -26,7 +25,6 @@ from click.testing import CliRunner
         "lv_ellipsoid",
         "lv_ellipsoid_2D",
         "biv_ellipsoid",
-        "biv_ellipsoid_torso",
     ],
 )
 def test_script(script, tmp_path: Path):

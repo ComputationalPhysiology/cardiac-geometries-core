@@ -1,5 +1,4 @@
 from .biv_ellipsoid import biv_ellipsoid
-from .biv_ellipsoid import biv_ellipsoid_torso
 from .lv_ellipsoid import create_benchmark_geometry_land15
 from .lv_ellipsoid import lv_ellipsoid
 from .lv_ellipsoid import lv_ellipsoid_flat_base
@@ -20,7 +19,6 @@ __all__ = [
     "slab",
     "slab_in_bath",
     "biv_ellipsoid",
-    "biv_ellipsoid_torso",
     "lv_ellipsoid_2D",
     "cylinder",
 ]
