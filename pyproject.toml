@@ -44,7 +44,7 @@ pypi = [
     "build",
 ]
 docs = [
-    "jupyter-book"
+    "jupyter-book<2.0"
 ]
 test = [
     "pre-commit",
