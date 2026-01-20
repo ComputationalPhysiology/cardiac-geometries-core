@@ -854,6 +854,13 @@ def cylinder_D_shaped(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--fillet-radius",
+    default=None,
+    type=float,
+    help="Radius of fillet to apply to the cut edges",
+    show_default=True,
+)
 def cylinder_cut(
     outname: Path,
     ri: float = 13.0,
@@ -864,6 +871,7 @@ def cylinder_cut(
     char_length: float = 10.0,
     verbose: bool = False,
     mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
+    fillet_radius: float | None = None,
 ):
     from .cylinder import cylinder_cut
 
@@ -877,6 +885,7 @@ def cylinder_cut(
         char_length=char_length,
         verbose=verbose,
         mode=mode,
+        fillet_radius=fillet_radius,
     )
 
 
