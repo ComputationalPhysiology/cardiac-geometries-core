@@ -1,4 +1,5 @@
 import math
+import typing
 from importlib.metadata import metadata
 from pathlib import Path
 
@@ -778,6 +779,107 @@ def cylinder_D_shaped(
     )
 
 
+@click.command()
+@click.argument(
+    "outname",
+    required=True,
+    type=click.Path(
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        readable=True,
+        resolve_path=True,
+    ),
+)
+@click.option(
+    "--mode",
+    help="Mode of cut: 'd_shaped' or 'racetrack'",
+    default="racetrack",
+    type=click.Choice(["d_shaped", "racetrack"], case_sensitive=False),
+    show_default=True,
+)
+@click.option(
+    "--ri",
+    default=13.0,
+    type=float,
+    help="Inner radius of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--ro",
+    default=20.0,
+    type=float,
+    help="Outer radius of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--height",
+    default=40.0,
+    type=float,
+    help="Height of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--inner-flat-face-distance",
+    "-if",
+    default=10.0,
+    type=float,
+    help=(
+        "The distance of the inner flat face from the center (along the x-axis)."
+        "This value must be less than inner_radius. Default is 5.0."
+    ),
+    show_default=True,
+)
+@click.option(
+    "--outer-flat-face-distance",
+    "-of",
+    default=17.0,
+    type=float,
+    help=(
+        "The distance of the outer flat face from the center (along the x-axis)."
+        "This value must be less than outer_radius. Default is 15.0."
+    ),
+    show_default=True,
+)
+@click.option(
+    "--char-length",
+    default=10.0,
+    type=float,
+    help="Characteristic length of mesh",
+    show_default=True,
+)
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
+def cylinder_cut(
+    outname: Path,
+    ri: float = 13.0,
+    ro: float = 20.0,
+    height: float = 40.0,
+    inner_flat_face_distance: float = 10.0,
+    outer_flat_face_distance: float = 17.0,
+    char_length: float = 10.0,
+    verbose: bool = False,
+    mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
+):
+    from .cylinder import cylinder_cut
+
+    cylinder_cut(
+        mesh_name=outname,
+        inner_radius=ri,
+        outer_radius=ro,
+        height=height,
+        inner_flat_face_distance=inner_flat_face_distance,
+        outer_flat_face_distance=outer_flat_face_distance,
+        char_length=char_length,
+        verbose=verbose,
+        mode=mode,
+    )
+
+
 app.add_command(lv_ellipsoid)
 app.add_command(lv_ellipsoid_2D)
 app.add_command(biv_ellipsoid)
@@ -786,3 +888,4 @@ app.add_command(slab_in_bath)
 app.add_command(cylinder)
 app.add_command(cylinder_racetrack)
 app.add_command(cylinder_D_shaped)
+app.add_command(cylinder_cut)
