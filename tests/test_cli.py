@@ -33,3 +33,18 @@ def test_script(script, tmp_path: Path):
     res = runner.invoke(script, [path.as_posix()])
     assert res.exit_code == 0
     assert path.is_file()
+
+
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "d_shaped",
+        "racetrack",
+    ],
+)
+def test_cylinder_cut(mode: str, tmp_path: Path):
+    runner = CliRunner()
+    path = tmp_path.with_suffix(".msh")
+    res = runner.invoke(cli.cylinder_cut, ["--mode", mode, path.as_posix()])
+    assert res.exit_code == 0
+    assert path.is_file()
