@@ -748,3 +748,129 @@ def cylinder_cut(
     if verbose:
         logger.info(f"Generated {mode} mesh: {path}")
     return path
+
+
+def cylinder_elliptical(
+    mesh_name: str | Path = "",
+    inner_radius_x: float = 10.0,
+    outer_radius_x: float = 20.0,
+    inner_radius_y: float | None = None,  # If None, defaults to inner_radius_x (Circle)
+    outer_radius_y: float | None = None,  # If None, defaults to outer_radius_x (Circle)
+    height: float = 40.0,
+    char_length: float = 10.0,
+    verbose: bool = True,
+):
+    """
+    Create a thick cylindrical shell which can be circular or elliptical.
+
+    Parameters
+    ----------
+    inner_radius_x : float
+        Inner radius along the X-axis.
+    outer_radius_x : float
+        Outer radius along the X-axis.
+    inner_radius_y : float | None
+        Inner radius along the Y-axis. If None, circle is created.
+    outer_radius_y : float | None
+        Outer radius along the Y-axis. If None, circle is created.
+    """
+
+    # --- 1. Handle Defaults for Ellipse vs Circle ---
+    # If Y-radii are missing, we assume a standard circular cylinder
+    if inner_radius_y is None:
+        inner_radius_y = inner_radius_x
+    if outer_radius_y is None:
+        outer_radius_y = outer_radius_x
+
+    path = utils.handle_mesh_name(mesh_name=mesh_name)
+
+    gmsh.initialize()
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
+
+    # --- 2. Create Geometry using Disk + Extrusion ---
+    # addDisk supports ellipse parameters (rx, ry).
+    # Arguments: xc, yc, zc, rx, ry
+
+    # Create Base Disks
+    outer_disk = gmsh.model.occ.addDisk(0, 0, 0, outer_radius_x, outer_radius_y)
+    inner_disk = gmsh.model.occ.addDisk(0, 0, 0, inner_radius_x, inner_radius_y)
+
+    # Subtract Inner from Outer (2D Cut)
+    # This creates the annular ring (elliptical or circular)
+    base_surface_list, _ = gmsh.model.occ.cut([(2, outer_disk)], [(2, inner_disk)])
+    base_surface_tag = base_surface_list[0][1]
+
+    # Extrude the Ring to create the 3D Shell
+    # Extrude returns a list: [(dim, tag), (dim, tag), ... ]
+    # The first item is the "top" surface, middle items are sides, last item is the volume.
+    extrude_result = gmsh.model.occ.extrude([(2, base_surface_tag)], 0, 0, height)
+
+    # Find the Volume tag
+    vol_tag = -1
+    for dim, tag in extrude_result:
+        if dim == 3:
+            vol_tag = tag
+            break
+
+    gmsh.model.occ.synchronize()
+
+    # --- 3. Robust Physical Group Assignment ---
+    # We use Center of Mass (COM) logic because extrusion might re-order surfaces.
+
+    surfaces = gmsh.model.occ.getEntities(dim=2)
+
+    groups: dict[str, list[int]] = {"INSIDE": [], "OUTSIDE": [], "TOP": [], "BOTTOM": []}
+
+    # Calculate a simple "mid-radius" to distinguish inner vs outer walls
+    # We use the average of X and Y radii for this threshold
+    avg_inner = (inner_radius_x + inner_radius_y) / 2.0
+    avg_outer = (outer_radius_x + outer_radius_y) / 2.0
+    mid_radius = (avg_inner + avg_outer) / 2.0
+
+    tol = height * 1e-3
+
+    for dim, tag in surfaces:
+        com = gmsh.model.occ.getCenterOfMass(dim, tag)
+        x, y, z = com[0], com[1], com[2]
+
+        # 1. Top/Bottom Caps
+        if abs(z - height) < tol:
+            groups["TOP"].append(tag)
+            continue
+        if abs(z - 0.0) < tol:
+            groups["BOTTOM"].append(tag)
+            continue
+
+        # 2. Side Walls (Inner vs Outer)
+        # We calculate the radial distance of the surface center from Z-axis
+        r = math.hypot(x, y)
+
+        if r < mid_radius:
+            groups["INSIDE"].append(tag)
+        else:
+            groups["OUTSIDE"].append(tag)
+
+    # Add Groups
+    for name, tags in groups.items():
+        if tags:
+            # Note: You might want fixed tag IDs (1, 2, 3...) for consistency
+            fixed_ids = {"INSIDE": 1, "OUTSIDE": 2, "TOP": 3, "BOTTOM": 4}
+            gmsh.model.addPhysicalGroup(2, tags, tag=fixed_ids.get(name, -1), name=name)
+
+    gmsh.model.addPhysicalGroup(3, [vol_tag], tag=5, name="VOLUME")
+
+    # --- 4. Meshing ---
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
+    gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
+
+    gmsh.model.mesh.generate(3)
+    gmsh.model.mesh.optimize("Netgen")
+
+    gmsh.write(path.as_posix())
+    gmsh.finalize()
+
+    if verbose:
+        print(f"Elliptical shell mesh generated: {path}")
+
+    return path
