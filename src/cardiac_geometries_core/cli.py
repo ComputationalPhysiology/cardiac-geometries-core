@@ -889,6 +889,99 @@ def cylinder_cut(
     )
 
 
+@click.command()
+@click.argument(
+    "outname",
+    required=True,
+    type=click.Path(
+        file_okay=True,
+        dir_okay=False,
+        writable=True,
+        readable=True,
+        resolve_path=True,
+    ),
+)
+@click.option(
+    "--rix",
+    default=13.0,
+    type=float,
+    help="Inner radius of the cylinder along the x-axis",
+    show_default=True,
+)
+@click.option(
+    "--riy",
+    default=13.0,
+    type=float,
+    help="Inner radius of the cylinder along the x-axis",
+    show_default=True,
+)
+@click.option(
+    "--rox",
+    default=20.0,
+    type=float,
+    help="Outer radius of the cylinder along the x-axis",
+    show_default=True,
+)
+@click.option(
+    "--roy",
+    default=20.0,
+    type=float,
+    help="Outer radius of the cylinder along the y-axis",
+    show_default=True,
+)
+@click.option(
+    "--height",
+    default=40.0,
+    type=float,
+    help="Height of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--char-length",
+    default=10.0,
+    type=float,
+    help="Characteristic length of mesh",
+    show_default=True,
+)
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to print GMSH messages to the console",
+    show_default=True,
+)
+@click.option(
+    "--fillet-radius",
+    default=None,
+    type=float,
+    help="Radius of fillet to apply to the cut edges",
+    show_default=True,
+)
+def cylinder_elliptical(
+    outname: Path,
+    rix: float = 15.0,
+    riy: float = 15.0,
+    rox: float = 20.0,
+    roy: float = 20.0,
+    height: float = 40.0,
+    char_length: float = 10.0,
+    verbose: bool = False,
+    mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
+    fillet_radius: float | None = None,
+):
+    from .cylinder import cylinder_elliptical
+
+    cylinder_elliptical(
+        mesh_name=outname,
+        inner_radius_x=rix,
+        inner_radius_y=riy,
+        outer_radius_x=rox,
+        outer_radius_y=roy,
+        height=height,
+        char_length=char_length,
+        verbose=verbose,
+    )
+
+
 app.add_command(lv_ellipsoid)
 app.add_command(lv_ellipsoid_2D)
 app.add_command(biv_ellipsoid)
@@ -898,3 +991,4 @@ app.add_command(cylinder)
 app.add_command(cylinder_racetrack)
 app.add_command(cylinder_D_shaped)
 app.add_command(cylinder_cut)
+app.add_command(cylinder_elliptical)
