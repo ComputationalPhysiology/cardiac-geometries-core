@@ -822,31 +822,44 @@ def cylinder_elliptical(
 
     groups: dict[str, list[int]] = {"INSIDE": [], "OUTSIDE": [], "TOP": [], "BOTTOM": []}
 
-    # Calculate a simple "mid-radius" to distinguish inner vs outer walls
-    # We use the average of X and Y radii for this threshold
-    avg_inner = (inner_radius_x + inner_radius_y) / 2.0
-    avg_outer = (outer_radius_x + outer_radius_y) / 2.0
-    mid_radius = (avg_inner + avg_outer) / 2.0
+    # Calculate the max dimension (major axis) for inner and outer shells
+    # We use this to classify surfaces based on their furthest point from center
+    major_inner = max(inner_radius_x, inner_radius_y)
+    major_outer = max(outer_radius_x, outer_radius_y)
 
-    tol = height * 1e-3
+    # Define a threshold halfway between the inner and outer major axes
+    # Any surface extending beyond this radius is "OUTSIDE"
+    threshold_radius = (major_inner + major_outer) / 2.0
+
+    # Vertical tolerance
+    tol_z = height * 1e-3
 
     for dim, tag in surfaces:
-        com = gmsh.model.occ.getCenterOfMass(dim, tag)
-        x, y, z = com[0], com[1], com[2]
+        # Get Bounding Box: (min_x, min_y, min_z, max_x, max_y, max_z)
+        bb = gmsh.model.getBoundingBox(dim, tag)
+        z_min, z_max = bb[2], bb[5]
+
+        # Calculate the surface's approximate Z-center
+        z_center = (z_min + z_max) / 2.0
 
         # 1. Top/Bottom Caps
-        if abs(z - height) < tol:
+        # Check if the surface is located essentially at z=0 or z=height
+        if abs(z_center - height) < tol_z:
             groups["TOP"].append(tag)
             continue
-        if abs(z - 0.0) < tol:
+        if abs(z_center - 0.0) < tol_z:
             groups["BOTTOM"].append(tag)
             continue
 
         # 2. Side Walls (Inner vs Outer)
-        # We calculate the radial distance of the surface center from Z-axis
-        r = math.hypot(x, y)
+        # Instead of COM, we check the maximum radial extent of the surface.
+        # Find the max absolute X or Y coordinate in the bounding box.
+        max_extent_x = max(abs(bb[0]), abs(bb[3]))
+        max_extent_y = max(abs(bb[1]), abs(bb[4]))
+        max_radial_extent = max(max_extent_x, max_extent_y)
 
-        if r < mid_radius:
+        # Compare against the threshold
+        if max_radial_extent < threshold_radius:
             groups["INSIDE"].append(tag)
         else:
             groups["OUTSIDE"].append(tag)
