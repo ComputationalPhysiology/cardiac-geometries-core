@@ -206,9 +206,9 @@ def biv_ellipsoid(
     base = gmsh.model.addPhysicalGroup(2, labels["BASE"])
     gmsh.model.setPhysicalName(2, base, "BASE")
     lv_endo_fw = gmsh.model.addPhysicalGroup(2, labels["LV_ENDOCARDIUM"])
-    gmsh.model.setPhysicalName(2, lv_endo_fw, "LV_ENDO")
+    gmsh.model.setPhysicalName(2, lv_endo_fw, "LV")
     rv_endo_fw = gmsh.model.addPhysicalGroup(2, labels["RV_ENDOCARDIUM"])
-    gmsh.model.setPhysicalName(2, rv_endo_fw, "RV_ENDO")
+    gmsh.model.setPhysicalName(2, rv_endo_fw, "RV")
 
     myocardium_group = gmsh.model.add_physical_group(dim=3, tags=[t[1] for t in final_model], tag=1)
     gmsh.model.setPhysicalName(3, myocardium_group, "Myocardium")
