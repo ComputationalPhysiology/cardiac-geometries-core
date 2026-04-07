@@ -268,77 +268,77 @@ def lv_ellipsoid_2D(
 )
 @click.option(
     "--base-cut-z",
-    default=2.5,
+    default=1.0,
     type=float,
     help="Z-coordinate of the base cut",
     show_default=True,
 )
 @click.option(
     "--box-size",
-    default=15.0,
+    default=20.0,
     type=float,
     help="Size of the cutting box",
     show_default=True,
 )
 @click.option(
     "--rv-wall-thickness",
-    default=0.4,
+    default=0.3,
     type=float,
     help="Thickness of the right ventricle wall",
     show_default=True,
 )
 @click.option(
     "--lv-wall-thickness",
-    default=0.8,
+    default=0.5,
     type=float,
     help="Thickness of the left ventricle wall",
     show_default=True,
 )
 @click.option(
     "--rv-offset-x",
-    default=1.4,
+    default=1.0,
     type=float,
     help="X-offset of the right ventricle",
     show_default=True,
 )
 @click.option(
     "--lv-radius-x",
-    default=2.0,
+    default=2.2,
     type=float,
     help="X-radius of the left ventricle",
     show_default=True,
 )
 @click.option(
     "--lv-radius-y",
-    default=1.8,
+    default=2.2,
     type=float,
     help="Y-radius of the left ventricle",
     show_default=True,
 )
 @click.option(
     "--lv-radius-z",
-    default=4.0,
+    default=4.5,
     type=float,
     help="Z-radius of the left ventricle",
     show_default=True,
 )
 @click.option(
     "--rv-radius-x",
-    default=3.8,
+    default=3.2,
     type=float,
     help="X-radius of the right ventricle",
     show_default=True,
 )
 @click.option(
     "--rv-radius-y",
-    default=2.6,
+    default=2.3,
     type=float,
     help="Y-radius of the right ventricle",
     show_default=True,
 )
 @click.option(
     "--rv-radius-z",
-    default=4.0,
+    default=4.3,
     type=float,
     help="Z-radius of the right ventricle",
     show_default=True,

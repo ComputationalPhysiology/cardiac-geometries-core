@@ -27,17 +27,17 @@ def within_bounding_box(
 def biv_ellipsoid(
     mesh_name: str | Path = "",
     char_length: float = 0.4,  # cm
-    base_cut_z: float = 2.5,
-    box_size: float = 15.0,  # Size of the cutting box
+    base_cut_z: float = 1.0,
+    box_size: float = 20.0,  # Size of the cutting box
     rv_wall_thickness: float = 0.4,  # cm
     lv_wall_thickness: float = 0.5,  # cm
-    rv_offset_x: float = 1.4,
-    lv_radius_x: float = 2.0,
-    lv_radius_y: float = 1.8,
-    lv_radius_z: float = 4.0,
-    rv_radius_x: float = 3.8,
-    rv_radius_y: float = 2.6,
-    rv_radius_z: float = 4.0,
+    rv_offset_x: float = 1.0,
+    lv_radius_x: float = 2.2,
+    lv_radius_y: float = 2.2,
+    lv_radius_z: float = 4.5,
+    rv_radius_x: float = 3.2,
+    rv_radius_y: float = 2.3,
+    rv_radius_z: float = 4.3,
     verbose: bool = False,
 ):
     """Create an idealized BiV geometry
@@ -49,19 +49,27 @@ def biv_ellipsoid(
     char_length : float, optional
         Characteristic length for mesh generation, by default 0.4
     box_size : float, optional
-        Size of the cutting box, by default 15.0
+        Size of the cutting box, by default 20.0
+    base_cut_z : float, optional
+        Z-coordinate at which to cut the base, by default 1.0
+    rv_wall_thickness : float, optional
+        Thickness of the right ventricular wall, by default 0.4
+    lv_wall_thickness : float, optional
+        Thickness of the left ventricular wall, by default 0.5
+    rv_offset_x : float, optional
+        X-offset of the right ventricle center from the origin, by default 1.0
     lv_radius_x : float, optional
-        Radius of the left ventricle in the x-direction, by default 2.0
+        Radius of the left ventricle in the x-direction, by default 2.2
     lv_radius_y : float, optional
-        Radius of the left ventricle in the y-direction, by default 1.8
+        Radius of the left ventricle in the y-direction, by default 2.2
     lv_radius_z : float, optional
-        Radius of the left ventricle in the z-direction, by default 3.25
+        Radius of the left ventricle in the z-direction, by default 4.5
     rv_radius_x : float, optional
-        Radius of the right ventricle in the x-direction, by default 1.9
+        Radius of the right ventricle in the x-direction, by default 3.2
     rv_radius_y : float, optional
-        Radius of the right ventricle in the y-direction, by default 2.5
+        Radius of the right ventricle in the y-direction, by default 2.3
     rv_radius_z : float, optional
-        Radius of the right ventricle in the z-direction, by default 3.0
+        Radius of the right ventricle in the z-direction, by default 4.3
     verbose : bool, optional
         Whether to print verbose output from gmsh, by default False
 
@@ -87,17 +95,21 @@ def biv_ellipsoid(
 
     occ = gmsh.model.occ
 
-    lv_r_inner = (lv_radius_x, lv_radius_y, lv_radius_z)
-    lv_r_outer = (
-        lv_radius_x + lv_wall_thickness,
-        lv_radius_y + lv_wall_thickness,
-        lv_radius_z + lv_wall_thickness,
+    lv_r_inner = (
+        lv_radius_x - lv_wall_thickness,
+        lv_radius_y - lv_wall_thickness,
+        lv_radius_z - lv_wall_thickness,
     )
-    rv_r_inner = (rv_radius_x, rv_radius_y, rv_radius_z)
+    lv_r_outer = (lv_radius_x, lv_radius_y, lv_radius_z)
+    rv_r_inner = (
+        rv_radius_x - rv_wall_thickness,
+        rv_radius_y - rv_wall_thickness,
+        rv_radius_z - rv_wall_thickness,
+    )
     rv_r_outer = (
-        rv_radius_x + rv_wall_thickness,
-        rv_radius_y + rv_wall_thickness,
-        rv_radius_z + rv_wall_thickness,
+        rv_radius_x,
+        rv_radius_y,
+        rv_radius_z,
     )
 
     # --- 1. Create the Solid Outer Shell ---
@@ -135,7 +147,6 @@ def biv_ellipsoid(
     )
 
     # --- 4. Truncate the Base ---
-    box_size = 20.0
     trunc_box = occ.addBox(-box_size / 2, -box_size / 2, base_cut_z, box_size, box_size, box_size)
     final_model, _ = occ.cut(myocardium, [(3, trunc_box)], removeTool=True, removeObject=True)
 
