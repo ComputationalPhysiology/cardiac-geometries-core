@@ -34,10 +34,10 @@ def biv_ellipsoid(
     rv_offset_x: float = 1.4,
     lv_radius_x: float = 2.0,
     lv_radius_y: float = 1.8,
-    lv_radius_z: float = 3.25,
-    rv_radius_x: float = 1.9,
-    rv_radius_y: float = 2.5,
-    rv_radius_z: float = 3.0,
+    lv_radius_z: float = 4.0,
+    rv_radius_x: float = 3.8,
+    rv_radius_y: float = 2.6,
+    rv_radius_z: float = 4.0,
     verbose: bool = False,
 ):
     """Create an idealized BiV geometry
@@ -87,63 +87,56 @@ def biv_ellipsoid(
 
     occ = gmsh.model.occ
 
-    # --- 1. Create Left Ventricle (LV) ---
     lv_r_inner = (lv_radius_x, lv_radius_y, lv_radius_z)
-    lv_inner = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
-    occ.dilate([(3, lv_inner)], lv_center[0], lv_center[1], lv_center[2], *lv_r_inner)
-    lv_inner_bounding_box = occ.getBoundingBox(3, lv_inner)
-
-    # Outer LV surface
     lv_r_outer = (
         lv_radius_x + lv_wall_thickness,
         lv_radius_y + lv_wall_thickness,
         lv_radius_z + lv_wall_thickness,
     )
-    lv_outer = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
-    occ.dilate([(3, lv_outer)], lv_center[0], lv_center[1], lv_center[2], *lv_r_outer)
-    lv_outer_bounding_box = occ.getBoundingBox(3, lv_outer)
-
-    # We need a copy of the LV outer volume to correctly carve out the RV later
-    lv_outer_copy = occ.copy([(3, lv_outer)])
-
-    # Form the LV wall by cutting the inner cavity from the outer volume
-    lv_wall, _ = occ.cut([(3, lv_outer)], [(3, lv_inner)], removeTool=True, removeObject=True)
-
-    # --- 2. Create Right Ventricle (RV) ---
-    # Inner RV cavity
     rv_r_inner = (rv_radius_x, rv_radius_y, rv_radius_z)
-    rv_inner = occ.addSphere(rv_center[0], rv_center[1], rv_center[2], 1)
-    occ.dilate([(3, rv_inner)], rv_center[0], rv_center[1], rv_center[2], *rv_r_inner)
-    rv_inner_bounding_box = occ.getBoundingBox(3, rv_inner)
-
-    # Outer RV surface
     rv_r_outer = (
         rv_radius_x + rv_wall_thickness,
         rv_radius_y + rv_wall_thickness,
         rv_radius_z + rv_wall_thickness,
     )
+
+    # --- 1. Create the Solid Outer Shell ---
+    lv_outer = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
+    occ.dilate([(3, lv_outer)], *lv_center, *lv_r_outer)
+    lv_outer_bounding_box = occ.getBoundingBox(3, lv_outer)
+
     rv_outer = occ.addSphere(rv_center[0], rv_center[1], rv_center[2], 1)
-    occ.dilate([(3, rv_outer)], rv_center[0], rv_center[1], rv_center[2], *rv_r_outer)
+    occ.dilate([(3, rv_outer)], *rv_center, *rv_r_outer)
     rv_outer_bounding_box = occ.getBoundingBox(3, rv_outer)
 
-    # Form the preliminary RV wall (Full outer - Full inner)
-    rv_wall_full, _ = occ.cut([(3, rv_outer)], [(3, rv_inner)], removeTool=True, removeObject=True)
+    # Deep intersection fuse (very robust in OCC)
+    outer_shell, _ = occ.fuse([(3, lv_outer)], [(3, rv_outer)], removeTool=True, removeObject=True)
 
-    # --- 3. Create the Crescent/Wrap-around Effect ---
-    # Subtract the LV outer volume from the RV wall.
-    # This removes the overlapping septum and makes the RV attach flush to the LV epicardium.
-    rv_wall_crescent, _ = occ.cut(rv_wall_full, lv_outer_copy, removeTool=True, removeObject=True)
+    # --- 2. Create the Inner Cavities ---
+    lv_inner = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
+    occ.dilate([(3, lv_inner)], *lv_center, *lv_r_inner)
+    lv_inner_bounding_box = occ.getBoundingBox(3, lv_inner)
 
-    # --- 4. Assemble the Myocardium ---
-    # Fuse the LV wall and the crescent RV wall together into one continuous solid
-    myocardium, _ = occ.fuse(lv_wall, rv_wall_crescent, removeTool=True, removeObject=True)
+    rv_inner = occ.addSphere(rv_center[0], rv_center[1], rv_center[2], 1)
+    occ.dilate([(3, rv_inner)], *rv_center, *rv_r_inner)
+    rv_inner_bounding_box = occ.getBoundingBox(3, rv_inner)
 
-    # --- 5. Truncate the Base ---
-    # Create a large bounding box to cut off the top part of the ellipsoids (Z > base_cut_z)
+    # To ensure the RV cavity doesn't carve into the LV wall (the septum),
+    # we trim the RV cavity using an independent LV outer profile.
+    lv_carver = occ.addSphere(lv_center[0], lv_center[1], lv_center[2], 1)
+    occ.dilate([(3, lv_carver)], *lv_center, *lv_r_outer)
+
+    rv_cavity, _ = occ.cut([(3, rv_inner)], [(3, lv_carver)], removeTool=True, removeObject=True)
+
+    # --- 3. Hollow Out the Myocardium ---
+    # Cut both cavities (LV inner and the trimmed RV cavity) from the fused outer shell
+    myocardium, _ = occ.cut(
+        outer_shell, [(3, lv_inner)] + rv_cavity, removeTool=True, removeObject=True
+    )
+
+    # --- 4. Truncate the Base ---
     box_size = 20.0
     trunc_box = occ.addBox(-box_size / 2, -box_size / 2, base_cut_z, box_size, box_size, box_size)
-
-    # Perform the final cut
     final_model, _ = occ.cut(myocardium, [(3, trunc_box)], removeTool=True, removeObject=True)
 
     occ.synchronize()
@@ -176,24 +169,20 @@ def biv_ellipsoid(
             continue
 
         if within_bounding_box(bounding_box, lv_inner_bounding_box):
-            if center_of_mass[0] < 0:
-                labels["LV_ENDOCARDIUM"].append(s[1])
-                logger.debug("  -> LV free wall endocardium")
-            else:
-                labels["LV_ENDOCARDIUM"].append(s[1])
-                logger.debug("  -> LV septal endocardium")
+            labels["LV_ENDOCARDIUM"].append(s[1])
+            logger.debug("  -> LV free wall endocardium")
 
         elif within_bounding_box(bounding_box, rv_inner_bounding_box):
-            if center_of_mass[0] > rv_center[0]:
-                labels["RV_ENDOCARDIUM"].append(s[1])
-                logger.debug("  -> RV free wall endocardium")
-            else:
-                labels["RV_ENDOCARDIUM"].append(s[1])
-                logger.debug("  -> RV septal endocardium")
+            labels["RV_ENDOCARDIUM"].append(s[1])
+            logger.debug("  -> RV free wall endocardium")
 
         elif within_bounding_box(bounding_box, lv_outer_bounding_box):
-            labels["LV_EPICARDIUM"].append(s[1])
-            logger.debug("  -> LV epicardium")
+            if center_of_mass[0] > rv_center[0]:
+                labels["RV_ENDOCARDIUM"].append(s[1])
+                logger.debug("  -> RV septal endocardium")
+            else:
+                labels["LV_EPICARDIUM"].append(s[1])
+                logger.debug("  -> LV epicardium")
         elif within_bounding_box(bounding_box, rv_outer_bounding_box):
             labels["RV_EPICARDIUM"].append(s[1])
             logger.debug("  -> RV epicardium")

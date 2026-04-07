@@ -1,5 +1,6 @@
 import math
 import typing
+import logging
 from importlib.metadata import metadata
 from pathlib import Path
 
@@ -365,6 +366,9 @@ def biv_ellipsoid(
     verbose: bool = False,
 ):
     from .biv_ellipsoid import biv_ellipsoid
+
+    loglevel = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=loglevel, format="%(message)s")
 
     biv_ellipsoid(
         mesh_name=outname,
