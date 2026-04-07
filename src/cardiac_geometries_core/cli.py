@@ -1,5 +1,6 @@
 import math
 import typing
+import logging
 from importlib.metadata import metadata
 from pathlib import Path
 
@@ -288,14 +289,14 @@ def lv_ellipsoid_2D(
 )
 @click.option(
     "--lv-wall-thickness",
-    default=0.5,
+    default=0.8,
     type=float,
     help="Thickness of the left ventricle wall",
     show_default=True,
 )
 @click.option(
     "--rv-offset-x",
-    default=3.0,
+    default=1.4,
     type=float,
     help="X-offset of the right ventricle",
     show_default=True,
@@ -316,28 +317,28 @@ def lv_ellipsoid_2D(
 )
 @click.option(
     "--lv-radius-z",
-    default=3.25,
+    default=4.0,
     type=float,
     help="Z-radius of the left ventricle",
     show_default=True,
 )
 @click.option(
     "--rv-radius-x",
-    default=1.9,
+    default=3.8,
     type=float,
     help="X-radius of the right ventricle",
     show_default=True,
 )
 @click.option(
     "--rv-radius-y",
-    default=2.5,
+    default=2.6,
     type=float,
     help="Y-radius of the right ventricle",
     show_default=True,
 )
 @click.option(
     "--rv-radius-z",
-    default=3.0,
+    default=4.0,
     type=float,
     help="Z-radius of the right ventricle",
     show_default=True,
@@ -355,16 +356,19 @@ def biv_ellipsoid(
     box_size: float = 15.0,  # Size of the cutting box
     rv_wall_thickness: float = 0.4,  # cm
     lv_wall_thickness: float = 0.5,  # cm
-    rv_offset_x: float = 3.0,
+    rv_offset_x: float = 1.4,
     lv_radius_x: float = 2.0,
     lv_radius_y: float = 1.8,
-    lv_radius_z: float = 3.25,
-    rv_radius_x: float = 1.9,
-    rv_radius_y: float = 2.5,
-    rv_radius_z: float = 3.0,
+    lv_radius_z: float = 4.0,
+    rv_radius_x: float = 3.8,
+    rv_radius_y: float = 2.6,
+    rv_radius_z: float = 4.0,
     verbose: bool = False,
 ):
     from .biv_ellipsoid import biv_ellipsoid
+
+    loglevel = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=loglevel, format="%(message)s")
 
     biv_ellipsoid(
         mesh_name=outname,
