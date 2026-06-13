@@ -13,12 +13,15 @@ logger = logging.getLogger(__name__)
 def cylinder(
     mesh_name: str | Path = "",
     inner_radius: float = 10.0,
-    outer_radius: float = 20.0,
+    outer_radius: float = 15.0,
     height: float = 40.0,
-    char_length: float = 10.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
+    char_length: float = 5.0,
     verbose: bool = True,
 ):
-    """Create a thick cylindrical shell (hollow cylinder) mesh using GMSH
+    """Create a thick cylindrical shell (hollow cylinder) mesh using GMSH,
+    with optional flat caps on the top and bottom.
 
     Parameters
     ----------
@@ -30,6 +33,10 @@ def cylinder(
         Outer radius of the cylinder, default is 20.0
     height : float
         Height of the cylinder, default is 40.0
+    floor_thickness : float
+        Thickness of the bottom cap, default is 10.0
+    roof_thickness : float
+        Thickness of the top cap, default is 10.0
     char_length : float
         Characteristic length of the mesh, default is 10.0
     verbose : bool
@@ -37,68 +44,118 @@ def cylinder(
     """
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
+    # Setup basic logging for debugging
+    if verbose:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    logger.info("--- Generating Cylinder ---")
+    logger.info(
+        f"Parameters: inner_radius={inner_radius}, outer_radius={outer_radius}, height={height}",
+    )
+    logger.info(
+        f"floor_thickness={floor_thickness}, "
+        f"roof_thickness={roof_thickness}, "
+        f"char_length={char_length}"
+    )
+
     gmsh.initialize()
     if not verbose:
         gmsh.option.setNumber("General.Verbosity", 0)
 
-    # Create two concentric cylinders
-    outer_cylinder = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, outer_radius)
-    inner_cylinder = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, inner_radius)
+    inner_z_start = floor_thickness
+    inner_height = height - floor_thickness - roof_thickness
 
-    # Boolean subtraction to get the shell
-    outer = [(3, outer_cylinder)]
-    inner = [(3, inner_cylinder)]
-    shell, id = gmsh.model.occ.cut(outer, inner, removeTool=True)
+    logger.info(
+        f"Inner cavity geometry: z_start={inner_z_start}, z_end={inner_z_start + inner_height}"
+    )
+
+    if inner_height < 0:
+        raise ValueError(
+            "Floor and roof thickness combined must be less than the total cylinder height."
+        )
+
+    # 1. Create the solid exterior cylinder
+    outer_cylinder = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, outer_radius)
+
+    # 2. Create the inner cavity to subtract
+    if inner_height > 0 and inner_radius > 0:
+        inner_cylinder = gmsh.model.occ.addCylinder(
+            0, 0, inner_z_start, 0, 0, inner_height, inner_radius
+        )
+        shell, id = gmsh.model.occ.cut(
+            [(3, outer_cylinder)], [(3, inner_cylinder)], removeTool=True
+        )
+    else:
+        # If no inner cavity, just keep the solid cylinder
+        shell = [(3, outer_cylinder)]
 
     gmsh.model.occ.synchronize()
 
-    # Get all surfaces to identify them
+    # --- Robust Physical Group Assignment ---
     surfaces = gmsh.model.occ.getEntities(dim=2)
 
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[0][0],
-        tags=[surfaces[0][1]],
-        tag=1,
-        name="INSIDE",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[1][0],
-        tags=[surfaces[1][1]],
-        tag=2,
-        name="OUTSIDE",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[2][0],
-        tags=[surfaces[2][1]],
-        tag=3,
-        name="TOP",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[3][0],
-        tags=[surfaces[3][1]],
-        tag=4,
-        name="BOTTOM",
-    )
+    # Keeping the original names expected by standard FEniCS workflows
+    groups: dict[str, list[int]] = {"INSIDE": [], "OUTSIDE": [], "TOP": [], "BOTTOM": []}
 
+    tol_z = height * 1e-3
+    threshold_radius = (inner_radius + outer_radius) / 2.0
+
+    for dim, tag in surfaces:
+        bb = gmsh.model.getBoundingBox(dim, tag)
+        z_min, z_max = bb[2], bb[5]
+        z_center = (z_min + z_max) / 2.0
+
+        # Check if the surface is a flat horizontal cap
+        if abs(z_max - z_min) < tol_z:
+            if abs(z_center - height) < tol_z:
+                groups["TOP"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> TOP")
+            elif abs(z_center - 0.0) < tol_z:
+                groups["BOTTOM"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> BOTTOM")
+            else:
+                # Any other flat cap belongs to the inner cavity bounds (floor/ceiling)
+                groups["INSIDE"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> INSIDE (Inner Cap)")
+        else:
+            # Curved vertical walls
+            max_extent_x = max(abs(bb[0]), abs(bb[3]))
+            max_extent_y = max(abs(bb[1]), abs(bb[4]))
+            max_radial_extent = max(max_extent_x, max_extent_y)
+
+            if max_radial_extent < threshold_radius:
+                groups["INSIDE"].append(tag)
+                logger.info(
+                    f"Surface {tag} (Radius={max_radial_extent:.2f}) mapped -> INSIDE (Curved)"
+                )
+            else:
+                groups["OUTSIDE"].append(tag)
+                logger.info(
+                    f"Surface {tag} (Radius={max_radial_extent:.2f}) mapped -> OUTSIDE (Curved)"
+                )
+
+    # Assign mapped groups to standard fixed Tags
+    fixed_tags = {"INSIDE": 1, "OUTSIDE": 2, "TOP": 3, "BOTTOM": 4}
+    for name, tags in groups.items():
+        if tags:
+            gmsh.model.addPhysicalGroup(2, tags, tag=fixed_tags[name], name=name)
+
+    # Finalize Volume
     gmsh.model.addPhysicalGroup(dim=3, tags=[t[1] for t in shell], tag=5, name="VOLUME")
 
-    # Set mesh size
+    # Meshing configuration
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
 
-    # Generate mesh
+    # Generate & optimize mesh
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.optimize("Netgen")
 
-    # gmsh.option.setNumber("Mesh.SaveAll", 1)
-
-    # Write mesh to file
     gmsh.write(path.as_posix())
-
-    # Finalize GMSH
     gmsh.finalize()
 
-    logger.info(f"Cylindrical shell mesh generated and saved to {mesh_name}")
+    if verbose:
+        logger.info(f"Closed cylindrical shell mesh generated and saved to {path.as_posix()}")
 
     return path
 

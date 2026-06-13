@@ -50,3 +50,26 @@ def test_cylinder_cut(mode: str, tmp_path: Path):
     res = runner.invoke(cli.cylinder_cut, ["--mode", mode, path.as_posix()])
     assert res.exit_code == 0
     assert path.is_file()
+
+
+def test_cylinders_with_roof_and_floor(tmp_path: Path):
+    runner = CliRunner()
+    path = tmp_path.with_suffix(".msh")
+    res = runner.invoke(
+        cli.cylinder,
+        [
+            "--ri",
+            "10.0",
+            "--ro",
+            "15.0",
+            "--height",
+            "40.0",
+            "--floor-thickness",
+            "5.0",
+            "--roof-thickness",
+            "5.0",
+            path.as_posix(),
+        ],
+    )
+    assert res.exit_code == 0
+    assert path.is_file()
