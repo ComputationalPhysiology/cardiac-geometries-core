@@ -44,10 +44,6 @@ def cylinder(
     """
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
-    # Setup basic logging for debugging
-    if verbose:
-        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
     logger.info("--- Generating Cylinder ---")
     logger.info(
         f"Parameters: inner_radius={inner_radius}, outer_radius={outer_radius}, height={height}",
@@ -395,9 +391,6 @@ def cylinder_D_shaped(
 
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
-    if verbose:
-        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-
     logger.info("--- Generating D-Shaped Cylinder ---")
     logger.info(
         f"Parameters: inner_radius={inner_radius}, outer_radius={outer_radius}, height={height}"
@@ -729,15 +722,15 @@ def cylinder_cut(
     height: float = 40.0,
     inner_flat_face_distance: float = 10.0,
     outer_flat_face_distance: float = 17.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     fillet_radius: float | None = None,
     char_length: float = 2.0,
     verbose: bool = True,
 ):
     """
     Create a unified cylindrical shell mesh (Racetrack or D-Shaped) with filleted corners.
-
-    This function uses explicit 2D profile construction (Lines and Arcs)
-    to guarantee valid geometry and meshing even with complex fillets.
+    Can be optionally closed with a floor and roof.
 
     Parameters
     ----------
@@ -752,13 +745,14 @@ def cylinder_cut(
         Extrusion height.
     inner_flat_face_distance : float
         Distance from center to the inner flat wall (Positive X).
-        For Racetrack, this applies to negative X as well.
     outer_flat_face_distance : float
         Distance from center to the outer flat wall (Positive X).
-        For Racetrack, this applies to negative X as well.
+    floor_thickness : float
+        Thickness of the bottom solid floor. Default is 0.0 (open).
+    roof_thickness : float | None
+        Thickness of the top solid roof. Default is None (mirrors floor).
     fillet_radius : Optional[float]
         Radius of the corners between flat and curved walls.
-        If None, a safe value is calculated automatically.
     char_length : float
         Target mesh size.
     """
@@ -768,12 +762,9 @@ def cylinder_cut(
     if outer_flat_face_distance >= outer_radius:
         raise ValueError("outer_flat_face_distance must be < outer_radius")
 
-    # Determine cuts based on mode
-    # (Positive X, Negative X)
     cuts = {"racetrack": (True, True), "d_shaped": (True, False)}
     cut_pos_x, cut_neg_x = cuts[mode]
 
-    # Auto-calculate fillet radius if missing
     if fillet_radius is None:
         gaps = []
         if cut_pos_x:
@@ -785,35 +776,52 @@ def cylinder_cut(
 
         min_gap = min(gaps) if gaps else 1.0
         fillet_radius = min_gap * 1.0
-        if verbose:
-            logger.debug(f"Auto-calculated fillet_radius: {fillet_radius:.4f}")
 
     path = utils.handle_mesh_name(mesh_name=mesh_name)
+
+    if verbose:
+        logger.info(f"--- Generating {mode.title()} Cut Cylinder ---")
+        logger.info(f"floor_thickness={floor_thickness}, roof_thickness={roof_thickness}")
 
     gmsh.initialize()
     if not verbose:
         gmsh.option.setNumber("General.Verbosity", 0)
 
-    # Geometry Builder (Quadrant System)
+    inner_z_start = floor_thickness
+    inner_height = height - floor_thickness - roof_thickness
 
-    # Build Inner and Outer Loops
+    if inner_height < 0:
+        raise ValueError(
+            "Floor and roof thickness combined must be less than the total cylinder height."
+        )
+
+    # 1. Build Solid Outer Shape
     outer_loop = _build_profile(
         outer_radius, outer_flat_face_distance, fillet_radius, cut_pos_x, cut_neg_x
     )
-    inner_loop = _build_profile(
-        inner_radius, inner_flat_face_distance, fillet_radius, cut_pos_x, cut_neg_x
-    )
+    outer_surf = gmsh.model.occ.addPlaneSurface([outer_loop])
+    outer_extrude = gmsh.model.occ.extrude([(2, outer_surf)], 0, 0, height)
+    outer_vol = next(tag for dim, tag in outer_extrude if dim == 3)
 
-    # Create Planar Surface with Hole
-    surf_tag = gmsh.model.occ.addPlaneSurface([outer_loop, inner_loop])
+    # 2. Build Solid Inner Tool and Cut
+    if inner_height > 0 and inner_radius > 0:
+        inner_loop = _build_profile(
+            inner_radius, inner_flat_face_distance, fillet_radius, cut_pos_x, cut_neg_x
+        )
+        inner_surf = gmsh.model.occ.addPlaneSurface([inner_loop])
 
-    # Extrude
-    extrude_res = gmsh.model.occ.extrude([(2, surf_tag)], 0, 0, height)
-    final_vol_tag = next(tag for dim, tag in extrude_res if dim == 3)
+        # Move the inner surface up to the floor thickness before extruding
+        gmsh.model.occ.translate([(2, inner_surf)], 0, 0, inner_z_start)
+        inner_extrude = gmsh.model.occ.extrude([(2, inner_surf)], 0, 0, inner_height)
+        inner_vol = next(tag for dim, tag in inner_extrude if dim == 3)
+
+        final_shell, _ = gmsh.model.occ.cut([(3, outer_vol)], [(3, inner_vol)], removeTool=True)
+    else:
+        final_shell = [(3, outer_vol)]
 
     gmsh.model.occ.synchronize()
 
-    # Physical Groups Assignment
+    # --- Physical Groups Assignment ---
     surfaces = gmsh.model.occ.getEntities(dim=2)
 
     groups: dict[str, list[int]] = {
@@ -823,59 +831,78 @@ def cylinder_cut(
         "OUTSIDE_CURVED": [],
         "TOP": [],
         "BOTTOM": [],
+        "INSIDE_TOP": [],
+        "INSIDE_BOTTOM": [],
     }
 
     mid_radius = (inner_radius + outer_radius) / 2.0
     tol = min(inner_radius, height) * 1e-3
+    tol_z = height * 1e-3
 
     for dim, tag in surfaces:
-        com = gmsh.model.occ.getCenterOfMass(dim, tag)
-        x, y, z = com[0], com[1], com[2]
-
-        # Caps
-        if abs(z - height) < tol:
-            groups["TOP"].append(tag)
-            continue
-        if abs(z - 0.0) < tol:
-            groups["BOTTOM"].append(tag)
-            continue
-
-        # Walls
-        r = math.hypot(x, y)
         bb = gmsh.model.getBoundingBox(dim, tag)
-        x_span = abs(bb[3] - bb[0])
+        z_min, z_max = bb[2], bb[5]
+        z_center = (z_min + z_max) / 2.0
+        x_min, x_max = bb[0], bb[3]
+        x_span = abs(x_max - x_min)
 
-        # Logic: Flat faces have very small X-span
+        # Check for Horizontal Caps
+        if abs(z_max - z_min) < tol_z:
+            if abs(z_center - height) < tol_z:
+                groups["TOP"].append(tag)
+            elif abs(z_center - 0.0) < tol_z:
+                groups["BOTTOM"].append(tag)
+            elif abs(z_center - (height - roof_thickness)) < tol_z:
+                groups["INSIDE_TOP"].append(tag)
+            elif abs(z_center - floor_thickness) < tol_z:
+                groups["INSIDE_BOTTOM"].append(tag)
+            else:
+                if z_center > height / 2.0:
+                    groups["INSIDE_TOP"].append(tag)
+                else:
+                    groups["INSIDE_BOTTOM"].append(tag)
+            continue
+
+        # Check for Vertical Walls
+        com = gmsh.model.occ.getCenterOfMass(dim, tag)
+        x = com[0]
+
+        # Flat faces have very small X-span
         if x_span < tol:
-            # Differentiate Inner vs Outer based on X location
             if abs(abs(x) - inner_flat_face_distance) < tol:
                 groups["INSIDE_FLAT"].append(tag)
             elif abs(abs(x) - outer_flat_face_distance) < tol:
                 groups["OUTSIDE_FLAT"].append(tag)
         else:
             # Curved faces (including fillets)
+            r = math.hypot(com[0], com[1])
             if r < mid_radius:
                 groups["INSIDE_CURVED"].append(tag)
             else:
                 groups["OUTSIDE_CURVED"].append(tag)
 
-    # Apply groups
+    # Apply physical groups dynamically
+    tag_idx = 1
     for name, tags in groups.items():
         if tags:
-            gmsh.model.addPhysicalGroup(2, tags, name=name)
+            gmsh.model.addPhysicalGroup(2, tags, tag=tag_idx, name=name)
+            tag_idx += 1
 
-    gmsh.model.addPhysicalGroup(3, [final_vol_tag], tag=100, name="VOLUME")
+    gmsh.model.addPhysicalGroup(3, [t[1] for t in final_shell], tag=tag_idx, name="VOLUME")
 
-    # --- 4. Meshing ---
+    # Meshing
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
 
     gmsh.model.mesh.generate(3)
+    gmsh.model.mesh.optimize("Netgen")
+
     gmsh.write(path.as_posix())
     gmsh.finalize()
 
     if verbose:
-        logger.info(f"Generated {mode} mesh: {path}")
+        logger.info(f"Generated {mode} mesh with caps: {path}")
+
     return path
 
 
