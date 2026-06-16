@@ -353,12 +353,13 @@ def cylinder_D_shaped(
     height: float = 40.0,
     inner_flat_face_distance: float = 5.0,
     outer_flat_face_distance: float = 15.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = True,
 ):
-    """Create a thick D-shaped cylindrical shell mesh using GMSH.
-
-    The D-shape has a single flat surface on the inside.
+    """Create a thick D-shaped cylindrical shell mesh using GMSH,
+    optionally closed with a roof and floor.
 
     Parameters
     ----------
@@ -372,15 +373,21 @@ def cylinder_D_shaped(
         Height of the cylinder, default is 40.0.
     inner_flat_face_distance : float
         The distance of the inner flat face from the center (along the x-axis).
-        This value "must be less than inner_radius. Default is 5.0.
+        This value must be less than inner_radius. Default is 5.0.
     outer_flat_face_distance : float
         The distance of the outer flat face from the center (along the x-axis).
         This value must be less than outer_radius. Default is 15.0.
+    floor_thickness : float
+        Thickness of the bottom cap (floor), default is 0.0 (open).
+    roof_thickness : float
+        Thickness of the top cap (roof), default is 0.0 (open).
     char_length : float
         Characteristic length of the mesh, default is 10.0.
     verbose : bool
         If True, GMSH will print messages to the console, default is True.
+
     """
+
     if inner_flat_face_distance >= inner_radius:
         raise ValueError("The 'inner_flat_face_distance' must be less than the 'inner_radius'.")
     if outer_flat_face_distance >= outer_radius:
@@ -388,14 +395,32 @@ def cylinder_D_shaped(
 
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
+    if verbose:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
+    logger.info("--- Generating D-Shaped Cylinder ---")
+    logger.info(
+        f"Parameters: inner_radius={inner_radius}, outer_radius={outer_radius}, height={height}"
+    )
+    logger.info(
+        f"floor_thickness={floor_thickness}, "
+        f"roof_thickness={roof_thickness}, char_length={char_length}"
+    )
+
     gmsh.initialize()
     if not verbose:
         gmsh.option.setNumber("General.Verbosity", 0)
 
-    # --- Geometry Creation ---
+    # Calculate inner cavity dimensions
+    inner_z_start = floor_thickness
+    inner_height = height - floor_thickness - roof_thickness
 
-    # 1. Create the outer D-shaped cylinder.
-    #    Start with a full cylinder, then cut it with a box.
+    if inner_height < 0:
+        raise ValueError(
+            "Floor and roof thickness combined must be less than the total cylinder height."
+        )
+
+    # 1. Create the outer D-shaped cylinder
     outer_cylinder_full = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, outer_radius)
     outer_cutter_box = gmsh.model.occ.addBox(
         outer_flat_face_distance,
@@ -409,81 +434,128 @@ def cylinder_D_shaped(
         [(3, outer_cylinder_full)], [(3, outer_cutter_box)], removeTool=True
     )
 
-    # 2. Create the inner D-shaped volume that will be subtracted.
-    inner_cylinder_tool = gmsh.model.occ.addCylinder(0, 0, 0, 0, 0, height, inner_radius)
-    inner_cutter_box = gmsh.model.occ.addBox(
-        inner_flat_face_distance,
-        -inner_radius,
-        -height * 0.1,
-        inner_radius,
-        2 * inner_radius,
-        height * 1.2,
-    )
-    inner_d_shape_tool, _ = gmsh.model.occ.cut(
-        [(3, inner_cylinder_tool)], [(3, inner_cutter_box)], removeTool=True
-    )
+    # 2. Create the inner D-shaped volume that will be subtracted
+    if inner_height > 0 and inner_radius > 0:
+        inner_cylinder_tool = gmsh.model.occ.addCylinder(
+            0, 0, inner_z_start, 0, 0, inner_height, inner_radius
+        )
+        inner_cutter_box = gmsh.model.occ.addBox(
+            inner_flat_face_distance,
+            -inner_radius,
+            inner_z_start - height * 0.1,
+            inner_radius,
+            2 * inner_radius,
+            inner_height + height * 0.2,
+        )
+        inner_d_shape_tool, _ = gmsh.model.occ.cut(
+            [(3, inner_cylinder_tool)], [(3, inner_cutter_box)], removeTool=True
+        )
 
-    # 3. Subtract the inner D-shaped volume from the outer D-shaped volume.
-    final_shell, _ = gmsh.model.occ.cut(outer_d_shape, inner_d_shape_tool, removeTool=True)
+        # 3. Subtract the inner cavity from the outer shape
+        final_shell, _ = gmsh.model.occ.cut(outer_d_shape, inner_d_shape_tool, removeTool=True)
+    else:
+        # If the cavity has negative or zero dimensions, treat as solid
+        final_shell = outer_d_shape
 
     gmsh.model.occ.synchronize()
 
-    # --- Physical Group Assignment ---
-    # This section identifies each surface by its geometric properties (location/shape)
-    # which is more reliable than assuming a fixed order.
+    # --- Robust Physical Group Assignment ---
     surfaces = gmsh.model.occ.getEntities(dim=2)
 
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[0][0],
-        tags=[surfaces[0][1]],
-        tag=1,
-        name="INSIDE_CURVED",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[1][0],
-        tags=[surfaces[1][1]],
-        tag=2,
-        name="INSIDE_FLAT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[2][0],
-        tags=[surfaces[2][1]],
-        tag=3,
-        name="OUTSIDE_CURVED",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[3][0],
-        tags=[surfaces[3][1]],
-        tag=4,
-        name="TOP",
-    )
+    groups: dict[str, list[int]] = {
+        "INSIDE_CURVED": [],
+        "INSIDE_FLAT": [],
+        "OUTSIDE_CURVED": [],
+        "OUTSIDE_FLAT": [],
+        "TOP": [],
+        "BOTTOM": [],
+        "INSIDE_TOP": [],
+        "INSIDE_BOTTOM": [],
+    }
 
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[4][0],
-        tags=[surfaces[4][1]],
-        tag=5,
-        name="OUTSIDE_FLAT",
-    )
-    gmsh.model.addPhysicalGroup(
-        dim=surfaces[5][0],
-        tags=[surfaces[5][1]],
-        tag=6,
-        name="BOTTOM",
-    )
+    tol_z = height * 1e-3
+    threshold_radius = (inner_radius + outer_radius) / 2.0
 
-    gmsh.model.addPhysicalGroup(dim=3, tags=[t[1] for t in final_shell], tag=7, name="VOLUME")
+    for dim, tag in surfaces:
+        bb = gmsh.model.getBoundingBox(dim, tag)
+        z_min, z_max = bb[2], bb[5]
+        z_center = (z_min + z_max) / 2.0
 
-    # --- Meshing ---
+        # Check for horizontal caps
+        if abs(z_max - z_min) < tol_z:
+            if abs(z_center - height) < tol_z:
+                groups["TOP"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> TOP")
+            elif abs(z_center - 0.0) < tol_z:
+                groups["BOTTOM"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> BOTTOM")
+            elif abs(z_center - (height - roof_thickness)) < tol_z:
+                groups["INSIDE_TOP"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> INSIDE_TOP")
+            elif abs(z_center - floor_thickness) < tol_z:
+                groups["INSIDE_BOTTOM"].append(tag)
+                logger.info(f"Surface {tag} (Z={z_center:.2f}) mapped -> INSIDE_BOTTOM")
+            else:
+                # Fallback for minor floating point discrepancies
+                if z_center > height / 2.0:
+                    groups["INSIDE_TOP"].append(tag)
+                else:
+                    groups["INSIDE_BOTTOM"].append(tag)
+        else:
+            # Check for vertical walls
+            x_min, x_max = bb[0], bb[3]
+            x_span = abs(x_max - x_min)
+
+            # If span in X is nearly 0, it's a flat wall
+            if x_span < tol_z:
+                x_center = (x_min + x_max) / 2.0
+                if abs(x_center - inner_flat_face_distance) < tol_z:
+                    groups["INSIDE_FLAT"].append(tag)
+                    logger.info(f"Surface {tag} (X={x_center:.2f}) mapped -> INSIDE_FLAT")
+                else:
+                    groups["OUTSIDE_FLAT"].append(tag)
+                    logger.info(f"Surface {tag} (X={x_center:.2f}) mapped -> OUTSIDE_FLAT")
+            else:
+                # It's a curved wall
+                max_extent_x = max(abs(bb[0]), abs(bb[3]))
+                max_extent_y = max(abs(bb[1]), abs(bb[4]))
+                max_radial_extent = max(max_extent_x, max_extent_y)
+
+                if max_radial_extent < threshold_radius:
+                    groups["INSIDE_CURVED"].append(tag)
+                    logger.info(
+                        f"Surface {tag} (Radius={max_radial_extent:.2f}) mapped -> INSIDE_CURVED"
+                    )
+                else:
+                    groups["OUTSIDE_CURVED"].append(tag)
+                    logger.info(
+                        f"Surface {tag} (Radius={max_radial_extent:.2f}) mapped -> OUTSIDE_CURVED"
+                    )
+
+    # Add dynamically mapped physical groups
+    tag_idx = 1
+    for name, tags in groups.items():
+        if tags:
+            gmsh.model.addPhysicalGroup(2, tags, tag=tag_idx, name=name)
+            tag_idx += 1
+
+    # Add final Volume group
+    gmsh.model.addPhysicalGroup(dim=3, tags=[t[1] for t in final_shell], tag=tag_idx, name="VOLUME")
+
+    # Meshing configuration
     gmsh.option.setNumber("Mesh.CharacteristicLengthMin", char_length)
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
-    gmsh.model.mesh.generate(3)
-    gmsh.model.mesh.optimize("Netgen")  # Optional: optimize mesh quality
 
-    # --- Save and Finalize ---
+    # Generate & optimize mesh
+    gmsh.model.mesh.generate(3)
+    gmsh.model.mesh.optimize("Netgen")
+
     gmsh.write(path.as_posix())
     gmsh.finalize()
 
-    logger.info(f"D-shaped cylindrical shell mesh generated and saved to {path.as_posix()}")
+    if verbose:
+        logger.info(f"D-shaped cylindrical shell mesh generated and saved to {path.as_posix()}")
+
     return path
 
 

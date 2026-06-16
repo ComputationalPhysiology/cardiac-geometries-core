@@ -765,6 +765,20 @@ def cylinder_racetrack(
     show_default=True,
 )
 @click.option(
+    "--floor-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the floor (bottom face) of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--roof-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the roof (top face) of the cylinder",
+    show_default=True,
+)
+@click.option(
     "--char-length",
     default=10.0,
     type=float,
@@ -784,6 +798,8 @@ def cylinder_D_shaped(
     height: float = 40.0,
     inner_flat_face_distance: float = 5.0,
     outer_flat_face_distance: float = 15.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
 ):
@@ -796,6 +812,8 @@ def cylinder_D_shaped(
         height=height,
         inner_flat_face_distance=inner_flat_face_distance,
         outer_flat_face_distance=outer_flat_face_distance,
+        floor_thickness=floor_thickness,
+        roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
     )
