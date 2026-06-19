@@ -120,6 +120,9 @@ def lv_ellipsoid(
 ):
     from .lv_ellipsoid import lv_ellipsoid
 
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
+
     lv_ellipsoid(
         mesh_name=outname,
         r_short_endo=r_short_endo,
@@ -231,6 +234,9 @@ def lv_ellipsoid_2D(
     verbose: bool = False,
 ):
     from .lv_ellipsoid import lv_ellipsoid_2D
+
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     lv_ellipsoid_2D(
         mesh_name=outname,
@@ -388,7 +394,7 @@ def biv_ellipsoid(
     )
 
 
-@click.command()
+@click.command(help="Create a slab geometry")
 @click.argument(
     "outname",
     required=True,
@@ -428,14 +434,24 @@ def biv_ellipsoid(
     help="Element size",
     show_default=True,
 )
+@click.option(
+    "--verbose/--no-verbose",
+    default=False,
+    help="Whether to have more verbose output",
+    show_default=True,
+)
 def slab(
     outname: Path,
     lx: float = 20.0,
     ly: float = 7.0,
     lz: float = 3.0,
     dx: float = 1.0,
+    verbose: bool = False,
 ):
     from .slab import slab
+
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     slab(
         mesh_name=outname,
@@ -443,10 +459,11 @@ def slab(
         ly=ly,
         lz=lz,
         dx=dx,
+        verbose=verbose,
     )
 
 
-@click.command()
+@click.command(help="Create a slab in a bath geometry")
 @click.argument(
     "outname",
     required=True,
@@ -520,6 +537,9 @@ def slab_in_bath(
 ):
     from .slab import slab_in_bath
 
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
+
     slab_in_bath(
         mesh_name=outname,
         lx=lx,
@@ -533,7 +553,7 @@ def slab_in_bath(
     )
 
 
-@click.command()
+@click.command(help="Create a cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -605,6 +625,9 @@ def cylinder(
 ):
     from .cylinder import cylinder
 
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
+
     cylinder(
         mesh_name=outname,
         inner_radius=ri,
@@ -617,7 +640,7 @@ def cylinder(
     )
 
 
-@click.command()
+@click.command(help="Create a racetrack cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -697,6 +720,9 @@ def cylinder_racetrack(
 ):
     from .cylinder import cylinder_racetrack
 
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
+
     cylinder_racetrack(
         mesh_name=outname,
         inner_radius=ri,
@@ -709,7 +735,7 @@ def cylinder_racetrack(
     )
 
 
-@click.command()
+@click.command(help="Create a D-shaped cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -765,6 +791,20 @@ def cylinder_racetrack(
     show_default=True,
 )
 @click.option(
+    "--floor-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the floor (bottom face) of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--roof-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the roof (top face) of the cylinder",
+    show_default=True,
+)
+@click.option(
     "--char-length",
     default=10.0,
     type=float,
@@ -784,10 +824,15 @@ def cylinder_D_shaped(
     height: float = 40.0,
     inner_flat_face_distance: float = 5.0,
     outer_flat_face_distance: float = 15.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
 ):
     from .cylinder import cylinder_D_shaped
+
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     cylinder_D_shaped(
         mesh_name=outname,
@@ -796,12 +841,14 @@ def cylinder_D_shaped(
         height=height,
         inner_flat_face_distance=inner_flat_face_distance,
         outer_flat_face_distance=outer_flat_face_distance,
+        floor_thickness=floor_thickness,
+        roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
     )
 
 
-@click.command()
+@click.command(help="Create a cut cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -864,6 +911,20 @@ def cylinder_D_shaped(
     show_default=True,
 )
 @click.option(
+    "--floor-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the floor (bottom face) of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--roof-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the roof (top face) of the cylinder",
+    show_default=True,
+)
+@click.option(
     "--char-length",
     default=10.0,
     type=float,
@@ -890,12 +951,17 @@ def cylinder_cut(
     height: float = 40.0,
     inner_flat_face_distance: float = 10.0,
     outer_flat_face_distance: float = 17.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
     mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
     fillet_radius: float | None = None,
 ):
     from .cylinder import cylinder_cut
+
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     cylinder_cut(
         mesh_name=outname,
@@ -904,6 +970,8 @@ def cylinder_cut(
         height=height,
         inner_flat_face_distance=inner_flat_face_distance,
         outer_flat_face_distance=outer_flat_face_distance,
+        floor_thickness=floor_thickness,
+        roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
         mode=mode,
@@ -911,7 +979,7 @@ def cylinder_cut(
     )
 
 
-@click.command()
+@click.command(help="Create an elliptical cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -959,6 +1027,20 @@ def cylinder_cut(
     show_default=True,
 )
 @click.option(
+    "--floor-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the floor (bottom face) of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--roof-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the roof (top face) of the cylinder",
+    show_default=True,
+)
+@click.option(
     "--char-length",
     default=10.0,
     type=float,
@@ -971,13 +1053,6 @@ def cylinder_cut(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
-@click.option(
-    "--fillet-radius",
-    default=None,
-    type=float,
-    help="Radius of fillet to apply to the cut edges",
-    show_default=True,
-)
 def cylinder_elliptical(
     outname: Path,
     rix: float = 15.0,
@@ -985,12 +1060,15 @@ def cylinder_elliptical(
     rox: float = 20.0,
     roy: float = 20.0,
     height: float = 40.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
-    mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
-    fillet_radius: float | None = None,
 ):
     from .cylinder import cylinder_elliptical
+
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(level=level, format="%(levelname)s: %(message)s")
 
     cylinder_elliptical(
         mesh_name=outname,
@@ -999,6 +1077,8 @@ def cylinder_elliptical(
         outer_radius_x=rox,
         outer_radius_y=roy,
         height=height,
+        floor_thickness=floor_thickness,
+        roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
     )
