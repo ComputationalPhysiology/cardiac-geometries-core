@@ -394,7 +394,7 @@ def biv_ellipsoid(
     )
 
 
-@click.command()
+@click.command(help="Create a slab geometry")
 @click.argument(
     "outname",
     required=True,
@@ -463,7 +463,7 @@ def slab(
     )
 
 
-@click.command()
+@click.command(help="Create a slab in a bath geometry")
 @click.argument(
     "outname",
     required=True,
@@ -553,7 +553,7 @@ def slab_in_bath(
     )
 
 
-@click.command()
+@click.command(help="Create a cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -640,7 +640,7 @@ def cylinder(
     )
 
 
-@click.command()
+@click.command(help="Create a racetrack cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -735,7 +735,7 @@ def cylinder_racetrack(
     )
 
 
-@click.command()
+@click.command(help="Create a D-shaped cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -848,7 +848,7 @@ def cylinder_D_shaped(
     )
 
 
-@click.command()
+@click.command(help="Create a cut cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -979,7 +979,7 @@ def cylinder_cut(
     )
 
 
-@click.command()
+@click.command(help="Create an elliptical cylinder geometry")
 @click.argument(
     "outname",
     required=True,
@@ -1027,6 +1027,20 @@ def cylinder_cut(
     show_default=True,
 )
 @click.option(
+    "--floor-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the floor (bottom face) of the cylinder",
+    show_default=True,
+)
+@click.option(
+    "--roof-thickness",
+    default=0.0,
+    type=float,
+    help="Thickness of the roof (top face) of the cylinder",
+    show_default=True,
+)
+@click.option(
     "--char-length",
     default=10.0,
     type=float,
@@ -1039,13 +1053,6 @@ def cylinder_cut(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
-@click.option(
-    "--fillet-radius",
-    default=None,
-    type=float,
-    help="Radius of fillet to apply to the cut edges",
-    show_default=True,
-)
 def cylinder_elliptical(
     outname: Path,
     rix: float = 15.0,
@@ -1053,10 +1060,10 @@ def cylinder_elliptical(
     rox: float = 20.0,
     roy: float = 20.0,
     height: float = 40.0,
+    floor_thickness: float = 0.0,
+    roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
-    mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
-    fillet_radius: float | None = None,
 ):
     from .cylinder import cylinder_elliptical
 
@@ -1070,6 +1077,8 @@ def cylinder_elliptical(
         outer_radius_x=rox,
         outer_radius_y=roy,
         height=height,
+        floor_thickness=floor_thickness,
+        roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
     )
