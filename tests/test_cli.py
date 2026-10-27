@@ -1,4 +1,5 @@
 from pathlib import Path
+import gmsh
 import pytest
 from cardiac_geometries_core import cli
 from click.testing import CliRunner
@@ -73,3 +74,49 @@ def test_cylinders_with_roof_and_floor(tmp_path: Path):
     )
     assert res.exit_code == 0
     assert path.is_file()
+
+
+def element_orders(path: Path) -> set[int]:
+    """Return the orders of the elements of highest dimension in the mesh file"""
+    gmsh.initialize()
+    try:
+        gmsh.merge(path.as_posix())
+        dim = max(d for d, _ in gmsh.model.getEntities())
+        element_types, _, _ = gmsh.model.mesh.getElements(dim)
+        return {gmsh.model.mesh.getElementProperties(t)[2] for t in element_types}
+    finally:
+        gmsh.finalize()
+
+
+@pytest.mark.parametrize("order", [2, 3])
+@pytest.mark.parametrize(
+    "script",
+    [
+        cli.cylinder,
+        cli.cylinder_racetrack,
+        cli.cylinder_D_shaped,
+        cli.slab,
+        cli.slab_in_bath,
+        cli.lv_ellipsoid,
+        cli.lv_ellipsoid_2D,
+        cli.biv_ellipsoid,
+        cli.cylinder_elliptical,
+    ],
+    ids=[
+        "cylinder",
+        "cylinder_racetrack",
+        "cylinder_D_shaped",
+        "slab",
+        "slab_in_bath",
+        "lv_ellipsoid",
+        "lv_ellipsoid_2D",
+        "biv_ellipsoid",
+        "cylinder_elliptical",
+    ],
+)
+def test_script_higher_order(script, order, tmp_path: Path):
+    runner = CliRunner()
+    path = tmp_path.with_suffix(".msh")
+    res = runner.invoke(script, ["--order", str(order), path.as_posix()])
+    assert res.exit_code == 0
+    assert element_orders(path) == {order}

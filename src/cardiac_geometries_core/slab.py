@@ -12,6 +12,7 @@ def slab(
     lz: float = 3.0,
     dx: float = 1.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     """Create a slab mesh using GMSH
 
@@ -29,6 +30,8 @@ def slab(
         Characteristic length of the mesh, by default 1.0
     verbose : bool, optional
         If True, GMSH will print messages to the console, by default False
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -93,6 +96,7 @@ def slab(
 
     gmsh.model.geo.synchronize()
     gmsh.model.mesh.generate(3)
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
 
@@ -110,6 +114,7 @@ def slab_in_bath(
     bz: float = 0.1,
     dx: float = 0.001,
     verbose: bool = False,
+    order: int = 1,
 ):
     """Create slab inside a bath
 
@@ -133,6 +138,8 @@ def slab_in_bath(
         Characteristic length of the mesh, by default 0.001
     verbose : bool, optional
         If True, GMSH will print messages to the console, by default False
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -244,6 +251,7 @@ def slab_in_bath(
 
     # gmsh.option.setNumber("Mesh.SaveAll", 1)
     gmsh.model.mesh.generate(3)
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
 

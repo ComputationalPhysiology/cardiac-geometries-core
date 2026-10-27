@@ -19,6 +19,13 @@ For example the following command will create an lv ellipsoid and save it to a f
 docker run --rm -w /home/shared -v $PWD:/home/shared -it ghcr.io/computationalphysiology/cardiac-geometries-core:latest lv-ellipsoid lv-mesh.msh
 ```
 
+## Higher order meshes
+All geometries can be created with elements of higher order, using the `--order` option on the command line or the `order` argument in python, e.g
+```
+geo lv-ellipsoid --order 2 lv-mesh.msh
+```
+The nodes of the higher order elements are placed on the geometry, so that curved boundaries are represented by curved elements.
+
 ## Authors
 Henrik Finsberg (henriknf@simula.no)
 
