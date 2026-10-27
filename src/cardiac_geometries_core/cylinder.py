@@ -19,6 +19,7 @@ def cylinder(
     roof_thickness: float = 0.0,
     char_length: float = 5.0,
     verbose: bool = True,
+    order: int = 1,
 ):
     """Create a thick cylindrical shell (hollow cylinder) mesh using GMSH,
     with optional flat caps on the top and bottom.
@@ -41,6 +42,8 @@ def cylinder(
         Characteristic length of the mesh, default is 10.0
     verbose : bool
         If True, GMSH will print messages to the console, default is True
+    order : int, optional
+        Order of the mesh elements, by default 1
     """
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
@@ -146,6 +149,7 @@ def cylinder(
     # Generate & optimize mesh
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.optimize("Netgen")
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
     gmsh.finalize()
@@ -165,6 +169,7 @@ def cylinder_racetrack(
     outer_flat_face_distance: float = 17.0,
     char_length: float = 10.0,
     verbose: bool = True,
+    order: int = 1,
 ):
     """Create a racetrack-shaped thick cylindrical shell mesh using GMSH.
 
@@ -190,6 +195,8 @@ def cylinder_racetrack(
         Characteristic length of the mesh, default is 10.0.
     verbose : bool
         If True, GMSH will print messages to the console, default is True.
+    order : int, optional
+        Order of the mesh elements, by default 1
     """
     if inner_flat_face_distance >= inner_radius:
         raise ValueError("The 'inner_flat_face_distance' must be less than the 'inner_radius'.")
@@ -333,6 +340,7 @@ def cylinder_racetrack(
     gmsh.option.setNumber("Mesh.CharacteristicLengthMax", char_length)
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.optimize("Netgen")  # Optional: optimize mesh quality
+    utils.set_order(order)
 
     # --- Save and Finalize ---
     gmsh.write(path.as_posix())
@@ -353,6 +361,7 @@ def cylinder_D_shaped(
     roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = True,
+    order: int = 1,
 ):
     """Create a thick D-shaped cylindrical shell mesh using GMSH,
     optionally closed with a roof and floor.
@@ -381,6 +390,8 @@ def cylinder_D_shaped(
         Characteristic length of the mesh, default is 10.0.
     verbose : bool
         If True, GMSH will print messages to the console, default is True.
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     """
 
@@ -542,6 +553,7 @@ def cylinder_D_shaped(
     # Generate & optimize mesh
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.optimize("Netgen")
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
     gmsh.finalize()
@@ -727,6 +739,7 @@ def cylinder_cut(
     fillet_radius: float | None = None,
     char_length: float = 2.0,
     verbose: bool = True,
+    order: int = 1,
 ):
     """
     Create a unified cylindrical shell mesh (Racetrack or D-Shaped) with filleted corners.
@@ -755,6 +768,10 @@ def cylinder_cut(
         Radius of the corners between flat and curved walls.
     char_length : float
         Target mesh size.
+    verbose : bool
+        If True, GMSH will print messages to the console, by default True
+    order : int, optional
+        Order of the mesh elements, by default 1
     """
 
     if inner_flat_face_distance >= inner_radius:
@@ -897,6 +914,8 @@ def cylinder_cut(
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.optimize("Netgen")
 
+    utils.set_order(order)
+
     gmsh.write(path.as_posix())
     gmsh.finalize()
 
@@ -917,6 +936,7 @@ def cylinder_elliptical(
     roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = True,
+    order: int = 1,
 ):
     """
     Create a thick cylindrical shell which can be circular or elliptical.
@@ -941,6 +961,8 @@ def cylinder_elliptical(
         Characteristic length of the mesh, default is 10.0.
     verbose : bool
         If True, GMSH will print messages to the console, default is True.
+    order : int, optional
+        Order of the mesh elements, by default 1
     """
 
     # --- 1. Handle Defaults for Ellipse vs Circle ---
@@ -1066,6 +1088,8 @@ def cylinder_elliptical(
 
     gmsh.model.mesh.generate(3)
     gmsh.model.mesh.optimize("Netgen")
+
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
     gmsh.finalize()

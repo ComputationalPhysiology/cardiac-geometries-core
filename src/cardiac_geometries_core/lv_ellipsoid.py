@@ -14,6 +14,7 @@ def prolate_lv_ellipsoid_flat_base(
     quota_base: float = -5.0,
     psize: float = 3.0,
     ndiv: float = 1.0,
+    order: int = 1,
 ) -> Path:
     """Create an LV ellipsoid with flat base
     in prolate spheroidal coordinates
@@ -34,6 +35,8 @@ def prolate_lv_ellipsoid_flat_base(
         _description_, by default 3.0
     ndiv : float, optional
         _description_, by default 1.0
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -53,6 +56,7 @@ def prolate_lv_ellipsoid_flat_base(
         quota_base=quota_base,
         ndiv=ndiv,
         psize=psize,
+        order=order,
     )
 
 
@@ -66,6 +70,7 @@ def prolate_lv_ellipsoid(
     mu_base_endo=-math.acos(5 / 17),
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
+    order: int = 1,
 ) -> Path:
     """Create an LV ellipsoid in prolate spheroidal coordinates
 
@@ -89,6 +94,8 @@ def prolate_lv_ellipsoid(
         _description_, by default -math.pi
     mu_base_epi : _type_, optional
         _description_, by default -math.acos(5 / 20)
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -110,11 +117,12 @@ def prolate_lv_ellipsoid(
         mu_apex_endo=mu_apex_endo,
         mu_apex_epi=mu_apex_epi,
         psize_ref=psize_ref,
+        order=order,
     )
 
 
-def create_benchmark_geometry_land15(mesh_name: str | Path = ""):
-    return lv_ellipsoid_flat_base(mesh_name=mesh_name)
+def create_benchmark_geometry_land15(mesh_name: str | Path = "", order: int = 1):
+    return lv_ellipsoid_flat_base(mesh_name=mesh_name, order=order)
 
 
 def lv_ellipsoid_flat_base(
@@ -126,6 +134,7 @@ def lv_ellipsoid_flat_base(
     quota_base: float = -5.0,
     psize: float = 3.0,
     ndiv: float = 1.0,
+    order: int = 1,
 ) -> Path:
     """Create an LV ellipsoids with a flat base
 
@@ -147,6 +156,8 @@ def lv_ellipsoid_flat_base(
         Point size, by default 3.0
     ndiv : float, optional
         Number of divisions, by default 1.0
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -168,6 +179,7 @@ def lv_ellipsoid_flat_base(
         mu_base_epi=mu_base_epi,
         mu_apex_endo=mu_apex_endo,
         mu_apex_epi=mu_apex_epi,
+        order=order,
     )
 
 
@@ -183,6 +195,7 @@ def lv_ellipsoid(
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
     verbose: bool = False,
+    order: int = 1,
 ) -> Path:
     """Create general LV ellipsoid
 
@@ -210,6 +223,8 @@ def lv_ellipsoid(
         Angle for the epicardial apex, by default -math.acos(5 / 20)
     verbose : bool, optional
         If True, GMSH will print messages to the console, by default True
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -225,7 +240,6 @@ def lv_ellipsoid(
     gmsh.option.setNumber("Geometry.CopyMeshingMethod", 1)
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
-    gmsh.option.setNumber("Mesh.ElementOrder", 1)
 
     def ellipsoid_point(mu, theta, r_long, r_short, psize):
         return gmsh.model.geo.addPoint(
@@ -335,6 +349,7 @@ def lv_ellipsoid(
 
     gmsh.model.geo.synchronize()
     gmsh.model.mesh.generate(3)
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
 
@@ -354,6 +369,7 @@ def lv_ellipsoid_2D(
     mu_apex_epi=-math.pi,
     mu_base_epi=-math.acos(5 / 20),
     verbose: bool = False,
+    order: int = 1,
 ) -> Path:
     """Create general LV ellipsoid
 
@@ -381,6 +397,8 @@ def lv_ellipsoid_2D(
         Angle for the epicardial apex, by default -math.acos(5 / 20)
     verbose : bool, optional
         If True, GMSH will print messages to the console, by default True
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -394,7 +412,6 @@ def lv_ellipsoid_2D(
     gmsh.option.setNumber("Geometry.CopyMeshingMethod", 1)
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
-    gmsh.option.setNumber("Mesh.ElementOrder", 1)
 
     def ellipsoid_point(mu, theta, r_long, r_short, psize):
         return gmsh.model.geo.addPoint(
@@ -478,6 +495,7 @@ def lv_ellipsoid_2D(
 
     gmsh.model.geo.synchronize()
     gmsh.model.mesh.generate(2)
+    utils.set_order(order)
 
     gmsh.write(path.as_posix())
 

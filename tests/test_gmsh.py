@@ -1,3 +1,5 @@
+import pytest
+
 import cardiac_geometries_core as cgc
 
 
@@ -44,3 +46,9 @@ def test_biv_ellipsoid(tmp_path):
 def test_cylinder(tmp_path):
     mesh_path = tmp_path.with_suffix(".msh")
     cgc.cylinder(mesh_name=mesh_path)
+
+
+def test_invalid_order(tmp_path):
+    mesh_path = tmp_path.with_suffix(".msh")
+    with pytest.raises(ValueError, match="at least 1"):
+        cgc.slab(mesh_name=mesh_path, order=0)

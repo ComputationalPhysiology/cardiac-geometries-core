@@ -105,6 +105,13 @@ def app():
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def lv_ellipsoid(
     outname: Path,
     r_short_endo: float = 7.0,
@@ -117,6 +124,7 @@ def lv_ellipsoid(
     mu_apex_epi: float = -math.pi,
     mu_base_epi: float = -math.acos(5 / 20),
     verbose: bool = False,
+    order: int = 1,
 ):
     from .lv_ellipsoid import lv_ellipsoid
 
@@ -135,6 +143,7 @@ def lv_ellipsoid(
         mu_apex_epi=mu_apex_epi,
         psize_ref=psize_ref,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -220,6 +229,13 @@ def lv_ellipsoid(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def lv_ellipsoid_2D(
     outname: Path,
     r_short_endo: float = 7.0,
@@ -232,6 +248,7 @@ def lv_ellipsoid_2D(
     mu_apex_epi: float = -math.pi,
     mu_base_epi: float = -math.acos(5 / 20),
     verbose: bool = False,
+    order: int = 1,
 ):
     from .lv_ellipsoid import lv_ellipsoid_2D
 
@@ -250,6 +267,7 @@ def lv_ellipsoid_2D(
         mu_apex_epi=mu_apex_epi,
         psize_ref=psize_ref,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -355,6 +373,13 @@ def lv_ellipsoid_2D(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def biv_ellipsoid(
     outname: Path,
     char_length: float = 0.4,  # cm
@@ -370,6 +395,7 @@ def biv_ellipsoid(
     rv_radius_y: float = 2.6,
     rv_radius_z: float = 4.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .biv_ellipsoid import biv_ellipsoid
 
@@ -391,6 +417,7 @@ def biv_ellipsoid(
         rv_radius_y=rv_radius_y,
         rv_radius_z=rv_radius_z,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -440,6 +467,13 @@ def biv_ellipsoid(
     help="Whether to have more verbose output",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def slab(
     outname: Path,
     lx: float = 20.0,
@@ -447,6 +481,7 @@ def slab(
     lz: float = 3.0,
     dx: float = 1.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .slab import slab
 
@@ -460,6 +495,7 @@ def slab(
         lz=lz,
         dx=dx,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -524,6 +560,13 @@ def slab(
     help="Element size",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def slab_in_bath(
     outname: Path,
     lx: float = 1.0,
@@ -534,6 +577,7 @@ def slab_in_bath(
     bz: float = 0.1,
     dx: float = 0.01,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .slab import slab_in_bath
 
@@ -550,6 +594,7 @@ def slab_in_bath(
         bz=bz,
         dx=dx,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -613,6 +658,13 @@ def slab_in_bath(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def cylinder(
     outname: Path,
     ri: float = 10.0,
@@ -622,6 +674,7 @@ def cylinder(
     roof_thickness: float = 0.0,
     char_length: float = 5.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .cylinder import cylinder
 
@@ -637,6 +690,7 @@ def cylinder(
         roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -708,6 +762,13 @@ def cylinder(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def cylinder_racetrack(
     outname: Path,
     ri: float = 13.0,
@@ -717,6 +778,7 @@ def cylinder_racetrack(
     outer_flat_face_distance: float = 17.0,
     char_length: float = 10.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .cylinder import cylinder_racetrack
 
@@ -732,6 +794,7 @@ def cylinder_racetrack(
         outer_flat_face_distance=outer_flat_face_distance,
         char_length=char_length,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -817,6 +880,13 @@ def cylinder_racetrack(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def cylinder_D_shaped(
     outname: Path,
     ri: float = 10.0,
@@ -828,6 +898,7 @@ def cylinder_D_shaped(
     roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .cylinder import cylinder_D_shaped
 
@@ -845,6 +916,7 @@ def cylinder_D_shaped(
         roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
+        order=order,
     )
 
 
@@ -944,6 +1016,13 @@ def cylinder_D_shaped(
     help="Radius of fillet to apply to the cut edges",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def cylinder_cut(
     outname: Path,
     ri: float = 13.0,
@@ -957,6 +1036,7 @@ def cylinder_cut(
     verbose: bool = False,
     mode: typing.Literal["racetrack", "d_shaped"] = "racetrack",
     fillet_radius: float | None = None,
+    order: int = 1,
 ):
     from .cylinder import cylinder_cut
 
@@ -976,6 +1056,7 @@ def cylinder_cut(
         verbose=verbose,
         mode=mode,
         fillet_radius=fillet_radius,
+        order=order,
     )
 
 
@@ -1053,6 +1134,13 @@ def cylinder_cut(
     help="Whether to print GMSH messages to the console",
     show_default=True,
 )
+@click.option(
+    "--order",
+    default=1,
+    type=int,
+    help="Order of the mesh elements",
+    show_default=True,
+)
 def cylinder_elliptical(
     outname: Path,
     rix: float = 15.0,
@@ -1064,6 +1152,7 @@ def cylinder_elliptical(
     roof_thickness: float = 0.0,
     char_length: float = 10.0,
     verbose: bool = False,
+    order: int = 1,
 ):
     from .cylinder import cylinder_elliptical
 
@@ -1081,6 +1170,7 @@ def cylinder_elliptical(
         roof_thickness=roof_thickness,
         char_length=char_length,
         verbose=verbose,
+        order=order,
     )
 
 

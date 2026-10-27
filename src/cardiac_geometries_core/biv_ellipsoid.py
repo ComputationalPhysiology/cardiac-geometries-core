@@ -39,6 +39,7 @@ def biv_ellipsoid(
     rv_radius_y: float = 2.3,
     rv_radius_z: float = 4.3,
     verbose: bool = False,
+    order: int = 1,
 ):
     """Create an idealized BiV geometry
 
@@ -72,6 +73,8 @@ def biv_ellipsoid(
         Radius of the right ventricle in the z-direction, by default 4.3
     verbose : bool, optional
         Whether to print verbose output from gmsh, by default False
+    order : int, optional
+        Order of the mesh elements, by default 1
 
     Returns
     -------
@@ -221,6 +224,7 @@ def biv_ellipsoid(
 
     # Generate the 3D volumetric mesh
     gmsh.model.mesh.generate(3)
+    utils.set_order(order)
 
     # Save the mesh
     gmsh.write(path.as_posix())
