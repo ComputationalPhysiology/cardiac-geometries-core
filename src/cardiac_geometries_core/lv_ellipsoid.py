@@ -405,10 +405,11 @@ def lv_ellipsoid_2D(
     Path
         Path to the generated gmsh file
     """
-    print(psize_ref)
     path = utils.handle_mesh_name(mesh_name=mesh_name)
 
     gmsh.initialize()
+    if not verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
     gmsh.option.setNumber("Geometry.CopyMeshingMethod", 1)
     gmsh.option.setNumber("Mesh.Optimize", 1)
     gmsh.option.setNumber("Mesh.OptimizeNetgen", 1)
